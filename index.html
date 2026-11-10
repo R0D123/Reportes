@@ -6,610 +6,7 @@
   <title>Dashboard DTS | Excel y nube</title>
   <meta name="description" content="Dashboard DTS de ingresos, gastos, utilidad y margen, con carga Excel y respaldo privado en la nube." />
   <script src="./config.js"></script>
-  <style>
-    :root {
-      --bg: #eef4f8;
-      --paper: #ffffff;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #d7e0e7;
-      --brand: #2fa7d4;
-      --brand-dark: #11759d;
-      --green: #087c3a;
-      --green-2: #0f9f52;
-      --red: #dc2626;
-      --amber: #d97706;
-      --blue: #1d4ed8;
-      --purple: #8b5cf6;
-      --shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-      --radius: 18px;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Inter, Segoe UI, Arial, Helvetica, sans-serif;
-      background:
-        radial-gradient(circle at 10% 0%, rgba(47, 167, 212, .18), transparent 28%),
-        linear-gradient(180deg, #f8fbfd, var(--bg));
-      color: var(--ink);
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 300px minmax(0, 1fr);
-      min-height: 100vh;
-    }
-
-    aside {
-      background: #0b1725;
-      color: #e5f6ff;
-      padding: 24px;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      box-shadow: 8px 0 30px rgba(15, 23, 42, .16);
-    }
-
-    .brand {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 26px;
-    }
-
-    .logo {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--brand), #6ee7b7);
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-      font-size: 19px;
-      color: white;
-      letter-spacing: -.08em;
-    }
-
-    .brand h1 {
-      font-size: 17px;
-      margin: 0;
-      line-height: 1.1;
-    }
-
-    .brand p {
-      margin: 4px 0 0;
-      font-size: 12px;
-      color: #9bc5d8;
-    }
-
-    .side-section {
-      margin-bottom: 18px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 7px;
-      color: #a8c4d3;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    select, input, button {
-      width: 100%;
-      min-height: 42px;
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 12px;
-      background: rgba(255,255,255,.08);
-      color: #f8fafc;
-      padding: 10px 12px;
-      font-size: 14px;
-      outline: none;
-    }
-
-    select option {
-      color: #0f172a;
-      background: white;
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 800;
-      transition: .15s ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.04);
-    }
-
-    .btn-primary {
-      border: none;
-      background: linear-gradient(135deg, var(--brand), #10b981);
-      color: white;
-    }
-
-    .btn-secondary {
-      background: rgba(255,255,255,.04);
-    }
-
-    .side-actions {
-      display: grid;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .small-note {
-      color: #9bc5d8;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    main {
-      padding: 24px;
-      min-width: 0;
-    }
-
-    .topbar {
-      background: linear-gradient(135deg, #ffffff 0%, #edf9ff 100%);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px;
-      margin-bottom: 16px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 18px;
-      align-items: start;
-    }
-
-    .topbar h2 {
-      margin: 0;
-      font-size: clamp(25px, 3vw, 40px);
-      line-height: 1.05;
-      letter-spacing: -.05em;
-    }
-
-    .topbar p {
-      color: var(--muted);
-      margin: 9px 0 0;
-      max-width: 920px;
-      line-height: 1.45;
-    }
-
-    .period-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 11px 14px;
-      border-radius: 999px;
-      background: #e0f2fe;
-      border: 1px solid #bae6fd;
-      color: #075985;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      background: var(--green-2);
-      border-radius: 999px;
-      box-shadow: 0 0 0 5px rgba(16, 185, 129, .15);
-    }
-
-    .upload-panel {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .upload-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr);
-      gap: 16px;
-      align-items: stretch;
-    }
-
-    .dropzone {
-      border: 2px dashed #9bd3e9;
-      background: #f1fbff;
-      border-radius: 20px;
-      min-height: 154px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 20px;
-      transition: .15s ease;
-    }
-
-    .dropzone.dragover {
-      background: #e0f7ff;
-      border-color: var(--brand-dark);
-      transform: scale(1.005);
-    }
-
-    .dropzone h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-
-    .dropzone p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.45;
-      font-size: 13px;
-    }
-
-    .file-input-label {
-      margin-top: 12px;
-      display: inline-flex;
-      width: auto;
-      background: var(--brand);
-      color: white;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .file-input-label input {
-      display: none;
-    }
-
-    .format-box {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 16px;
-    }
-
-    .format-box h4 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-
-    .format-box ul {
-      margin: 0;
-      padding-left: 18px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .library-status {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .kpis {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .kpi {
-      min-height: 118px;
-      border-radius: 18px;
-      color: white;
-      padding: 16px;
-      box-shadow: var(--shadow);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .kpi::after {
-      content: "";
-      position: absolute;
-      right: -42px;
-      bottom: -42px;
-      width: 110px;
-      height: 110px;
-      border-radius: 100%;
-      background: rgba(255,255,255,.13);
-    }
-
-    .kpi.blue { background: linear-gradient(135deg, #0e7490, #38bdf8); }
-    .kpi.green { background: linear-gradient(135deg, #047857, #22c55e); }
-    .kpi.red { background: linear-gradient(135deg, #991b1b, #ef4444); }
-    .kpi.indigo { background: linear-gradient(135deg, #312e81, #4f46e5); }
-    .kpi.gray { background: linear-gradient(135deg, #334155, #64748b); }
-
-    .kpi-title {
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      opacity: .88;
-    }
-
-    .kpi-value {
-      margin-top: 12px;
-      font-size: clamp(21px, 2.2vw, 32px);
-      font-weight: 950;
-      letter-spacing: -.05em;
-      white-space: nowrap;
-    }
-
-    .kpi-sub {
-      font-size: 12px;
-      margin-top: 8px;
-      opacity: .84;
-    }
-
-    .mini-kpis {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .mini {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-left: 8px solid var(--brand);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-
-    .mini.redline { border-left-color: var(--red); }
-    .mini.greenline { border-left-color: var(--green); }
-    .mini.amberline { border-left-color: var(--amber); }
-
-    .mini h4 {
-      color: var(--muted);
-      margin: 0;
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }
-
-    .mini strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 20px;
-      letter-spacing: -.03em;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .panel {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-      min-width: 0;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .panel h3 {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    .panel .hint {
-      color: var(--muted);
-      font-size: 12px;
-      text-align: right;
-    }
-
-    canvas {
-      width: 100%;
-      height: 330px;
-      display: block;
-    }
-
-    .donut-canvas { height: 330px; }
-    .trend-canvas { height: 260px; }
-
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 980px;
-    }
-
-    th, td {
-      border-bottom: 1px solid var(--line);
-      padding: 12px 13px;
-      text-align: left;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
-    th {
-      background: #e8f6fb;
-      color: #075985;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: .06em;
-      font-weight: 900;
-    }
-
-    tbody tr:hover {
-      background: #f1fbff;
-    }
-
-    .comparison { margin-bottom: 16px; }
-    .comparison p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-    .comparison-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
-    .comparison-controls label { color: #475569; }
-    .comparison-controls select { background: #f8fafc; border-color: var(--line); color: var(--ink); }
-    .comparison-controls select:focus-visible { outline: 2px solid var(--brand-dark); outline-offset: 1px; }
-    .comparison table { min-width: 670px; font-variant-numeric: tabular-nums; }
-    .comparison thead th:not(:first-child), .comparison td { text-align: right; }
-    .comparison tbody th { background: transparent; color: var(--ink); font-size: 13px; text-transform: none; letter-spacing: normal; }
-    .comparison td:last-child { background: #eef8f3; font-weight: 800; }
-    .tag {
-      display: inline-flex;
-      padding: 5px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 900;
-      border: 1px solid transparent;
-    }
-
-    .tag.ok { background: #dcfce7; color: #166534; border-color: #86efac; }
-    .tag.bad { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-    .tag.warn { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-
-    .records {
-      display: grid;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .record-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-      padding: 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.06);
-      color: #d7edf7;
-      font-size: 13px;
-    }
-
-    .record-item button {
-      width: auto;
-      min-height: 30px;
-      padding: 5px 10px;
-      font-size: 12px;
-      border-radius: 9px;
-      background: rgba(239,68,68,.18);
-      color: #fecaca;
-    }
-
-    .toast {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      background: #0f172a;
-      color: white;
-      padding: 13px 16px;
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      max-width: 380px;
-      display: none;
-      z-index: 20;
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .toast.show { display: block; }
-
-    .cloud-panel {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      padding: 18px 20px;
-      margin-bottom: 16px;
-    }
-    .cloud-panel h3 { margin: 0 0 8px; font-size: 17px; }
-    .cloud-panel p { color: var(--muted); margin: 6px 0 12px; font-size: 13px; line-height: 1.45; }
-    .cloud-panel .auth-grid { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto auto; gap: 10px; align-items: end; }
-    .cloud-panel input { background: white; color: var(--ink); border: 1px solid var(--line); }
-    .cloud-panel label { color: #475569; }
-    .cloud-panel button { width: auto; min-width: 118px; }
-    .cloud-panel .cloud-user { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .cloud-panel .cloud-user button { background: #e2e8f0; color: var(--ink); border-color: var(--line); }
-    .storage-note { margin-top: 12px; font-size: 12px; line-height: 1.45; color: #a8c4d3; }
-    .record-item { grid-template-columns: minmax(0, 1fr) auto auto; }
-    .record-item .download-record { background: rgba(47,167,212,.16); color: #bae6fd; }
-    .record-item .filename { display: block; margin-top: 4px; font-size: 11px; overflow-wrap: anywhere; color: #a8c4d3; }
-    [hidden] { display: none !important; }
-    @media (max-width: 1000px) { .cloud-panel .auth-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 620px) { .cloud-panel .auth-grid { grid-template-columns: 1fr; } .cloud-panel button { width: 100%; } }
-
-    @media (max-width: 1180px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      aside {
-        position: relative;
-        height: auto;
-      }
-
-      .kpis {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .mini-kpis {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .grid-2, .upload-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 680px) {
-      main {
-        padding: 14px;
-      }
-
-      .topbar {
-        grid-template-columns: 1fr;
-      }
-
-      .kpis, .mini-kpis {
-        grid-template-columns: 1fr;
-      }
-
-      .kpi-value {
-        white-space: normal;
-      }
-    }
-
-    @media print {
-      aside, .upload-panel {
-        display: none;
-      }
-      .layout {
-        display: block;
-      }
-      main {
-        padding: 0;
-      }
-      .topbar, .panel, .kpi, .mini {
-        box-shadow: none;
-      }
-    }
-    @media (max-width: 620px) { .comparison-controls { grid-template-columns: 1fr; } }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="layout">
@@ -643,7 +40,7 @@
       </div>
 
       <div class="side-actions">
-        <button class="btn-primary" id="refreshBtn">Actualizar dashboard</button>
+        <button class="btn-primary" id="refreshBtn">Sincronizar con la nube</button>
         <button class="btn-secondary" id="exportBtn">Exportar CSV filtrado</button>
         <button class="btn-secondary" id="resetStorageBtn">Borrar cargas guardadas</button>
         <button class="btn-secondary" id="backupBtn">Exportar respaldo JSON</button>
@@ -655,7 +52,7 @@
       </div>
 
       <p id="storageSideNote" class="small-note">
-        Modo local: se conservan los datos procesados en este navegador. Para guardar los Excel originales en la nube, configura Supabase.
+        ALMACENAMIENTO EN NUBE EXCLUSIVO · Datos procesados en Supabase Database y archivos Excel originales en Supabase Storage privado. No hay almacenamiento local de datos financieros.
       </p>
     </aside>
 
@@ -691,10 +88,10 @@
           <div id="dropzone" class="dropzone">
             <div>
               <h3>Área de carga de información</h3>
-              <p>Arrastra aquí uno o varios archivos Excel, o selecciónalos manualmente. El dashboard actualizará sus indicadores con cada carga.</p>
+              <p>Inicia sesión y sube los Excel para guardar tanto los originales como sus datos procesados en Supabase. Accede a ellos desde cualquier dispositivo con la misma cuenta.</p>
               <label class="file-input-label">
                 Seleccionar Excel
-                <input id="fileInput" type="file" multiple accept=".xlsx,.xls,.csv" />
+                <input id="fileInput" type="file" multiple accept=".xlsx,.xls,.csv" disabled />
               </label>
               <div id="xlsxStatus" class="library-status"></div>
               <p id="uploadProgress" class="library-status" role="status"></p>
@@ -704,9 +101,9 @@
           <div class="format-box">
             <h4>Formato recomendado</h4>
             <ul>
-              <li>Hoja <b>Centros Costos</b>: Centro, Ingresos, Gastos, Utilidad, Margen y Estado.</li>
-              <li>También lee la hoja <b>Datos Originales</b> usando las cuentas 4 - Ingresos y 31 a 37 - Gastos.</li>
-              <li>El periodo se toma desde “TOTAL MES AÑO” o desde el nombre del archivo.</li>
+              <li>Reconoce hojas con encabezados <b>Centro, Ingresos y Gastos</b>, incluso con otros nombres de pestaña y encabezados similares.</li>
+              <li>Acepta varios meses en una columna Periodo, columnas por mes o pestañas mensuales. Mantiene soporte para <b>Datos Originales</b> (cuentas 4 y 31–37).</li>
+              <li>Cada registro necesita un mes identificable; para acumulados anuales, incluye el <b>año</b> en el archivo, la hoja o los datos.</li>
             </ul>
           </div>
         </div>
@@ -886,8 +283,6 @@
   <script>
     // No se publica información financiera de ejemplo en GitHub.
     const DEFAULT_ROWS = [];
-    const STORAGE_KEY = "dts_dashboard_local_v3";
-    const LEGACY_STORAGE_KEY = "dts_dashboard_excel_v2";
     const CONFIG = window.DTS_CONFIG || {};
     const CLOUD_ENABLED = Boolean(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_PUBLISHABLE_KEY);
     const MAX_FILE_MB = Number(CONFIG.MAX_FILE_MB) || 15;
@@ -896,12 +291,15 @@
     let currentUser = null;
     let cloudRecords = new Map();
     let cloudBusy = false;
+    let cloudReady = false;  // No se opera hasta confirmar sincronización de la nube.
     let authRunId = 0;
     let lastWarnings = [];
 
     let xlsxLoadPromise = null;
 
-    let rows = CLOUD_ENABLED ? [] : loadStoredRows();
+    // Los registros financieros se conservan SOLO en memoria RAM mientras la sesión esté activa.
+    // La persistencia real reside exclusivamente en Supabase PostgreSQL + Storage.
+    let rows = [];
     let filteredRows = [];
 
     const MONTHS = [
@@ -920,23 +318,6 @@
     const PALETTE = ["#0f766e", "#0284c7", "#7c3aed", "#db2777", "#16a34a", "#f97316", "#334155", "#e11d48"];
 
     const $ = (id) => document.getElementById(id);
-
-    function loadStoredRows() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null");
-        if (Array.isArray(saved)) return saved;
-      } catch (e) { console.warn("Datos locales ilegibles", e); }
-      return [];
-    }
-
-    function saveRows() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-        return true;
-      } catch {
-        return false;
-      }
-    }
 
     function normalizeText(value) {
       return String(value ?? "")
@@ -1324,58 +705,51 @@
     }
 
     async function deletePeriod(period) {
-      if (!confirm(`¿Eliminar el periodo "${period}" del histórico?`)) return;
-      if (CLOUD_ENABLED) {
-        if (!currentUser || cloudBusy) return showToast("Debes iniciar sesión en la nube.");
-        setCloudBusy(true);
-        try {
-          const record = cloudRecords.get(period);
-          const { error } = await cloudClient.from("dts_imports").delete().eq("period", period);
-          if (error) throw error;
-          cloudRecords.delete(period);
-          await deleteUnreferencedFile(record?.storage_path);
-          await loadCloudRows();
-          showToast("Periodo eliminado de la nube.");
-        } catch (error) { showToast("No se pudo eliminar: " + error.message); }
-        finally { setCloudBusy(false); }
-      } else {
-        rows = rows.filter(r => r.periodo !== period);
-        const saved = saveRows();
-        populateFilters(); updateDashboard();
-        showToast(saved ? "Periodo eliminado localmente." : "Periodo eliminado solo de esta sesión.");
+      if (!CLOUD_ENABLED || !cloudReady || !currentUser || cloudBusy) {
+        return showToast("Inicia sesión y sincroniza la nube antes de eliminar datos.");
       }
+      if (!confirm(`¿Eliminar el periodo "${period}" y su Excel original si no está usado en otro mes?`)) return;
+      setCloudBusy(true);
+      try {
+        const record = cloudRecords.get(period);
+        const { error } = await cloudClient.from("dts_imports")
+          .delete().eq("user_id", currentUser.id).eq("period", period);
+        if (error) throw error;
+        cloudRecords.delete(period);
+        await deleteUnreferencedFile(record?.storage_path);
+        await loadCloudRows();
+        showToast("Periodo eliminado de Supabase.");
+      } catch (error) { showToast("No se pudo eliminar: " + error.message); }
+      finally { setCloudBusy(false); }
     }
 
     async function resetStorage() {
-      const message = CLOUD_ENABLED
-        ? "¿Eliminar TODOS tus periodos y archivos Excel originales de la nube? Esta acción no se puede deshacer."
-        : "¿Borrar todos los registros locales de este navegador?";
-      if (!confirm(message)) return;
-      if (CLOUD_ENABLED) {
-        if (!currentUser || cloudBusy) return showToast("Debes iniciar sesión.");
-        setCloudBusy(true);
-        try {
-          const paths = [...new Set([...cloudRecords.values()].map(x => x.storage_path).filter(Boolean))];
-          const { error } = await cloudClient.from("dts_imports").delete().eq("user_id", currentUser.id);
-          if (error) throw error;
-          cloudRecords.clear();
-          if (paths.length) {
-            const { error: storageError } = await cloudClient.storage.from(BUCKET).remove(paths);
-            if (storageError) showToast("Los datos se eliminaron, pero verifica los archivos en Storage.");
-          }
-          await loadCloudRows();
-          showToast("Se eliminaron los registros de la nube.");
-        } catch (error) { showToast("No se pudo borrar: " + error.message); }
-        finally { setCloudBusy(false); }
-      } else {
-        try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); } catch {}
-        rows = []; populateFilters(); updateDashboard(); showToast("Se borraron los datos locales.");
+      if (!CLOUD_ENABLED || !cloudReady || !currentUser || cloudBusy) {
+        return showToast("Inicia sesión y sincroniza la nube antes de borrar registros.");
       }
+      if (!confirm("¿Eliminar TODOS tus periodos y archivos Excel originales de Supabase? Esta acción no se puede deshacer.")) return;
+      setCloudBusy(true);
+      try {
+        const paths = [...new Set([...cloudRecords.values()].map(x => x.storage_path).filter(Boolean))];
+        const { error } = await cloudClient.from("dts_imports").delete().eq("user_id", currentUser.id);
+        if (error) throw error;
+        cloudRecords.clear();
+        let storageErrorMessage = "";
+        if (paths.length) {
+          const { error: storageError } = await cloudClient.storage.from(BUCKET).remove(paths);
+          if (storageError) storageErrorMessage = storageError.message;
+        }
+        await loadCloudRows();
+        showToast(storageErrorMessage
+          ? "Se borraron los datos, pero algunos Excel pueden seguir en Storage: " + storageErrorMessage
+          : "Se eliminaron los datos y Excel originales de Supabase.");
+      } catch (error) { showToast("No se pudo borrar: " + error.message); }
+      finally { setCloudBusy(false); }
     }
 
     function exportJSON() {
       const payload = { version: 3, empresa: "DTS", fecha: new Date().toISOString(),
-        modo: CLOUD_ENABLED ? "nube" : "local", registros: rows };
+        modo: "exportación_manual_desde_nube", registros: rows };
       downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
         "respaldo_dts_" + new Date().toISOString().slice(0, 10) + ".json");
     }
@@ -1412,11 +786,11 @@
 
     function setCloudBusy(isBusy) {
       cloudBusy = isBusy;
-      $("fileInput").disabled = isBusy || (CLOUD_ENABLED && !currentUser);
+      $("fileInput").disabled = isBusy || !CLOUD_ENABLED || !currentUser || !cloudReady;
       $("loginBtn").disabled = isBusy;
       $("signupBtn").disabled = isBusy;
-      $("refreshBtn").disabled = isBusy;
-      $("resetStorageBtn").disabled = isBusy;
+      $("refreshBtn").disabled = isBusy || !CLOUD_ENABLED || !currentUser;
+      $("resetStorageBtn").disabled = isBusy || !CLOUD_ENABLED || !currentUser || !cloudReady;
     }
 
     function setStorageStatus(message) { $("storageStatus").textContent = message; }
@@ -1435,13 +809,17 @@
 
     async function initializeCloud() {
       if (!CLOUD_ENABLED) {
-        $("storageTitle").textContent = "Modo local — sin nube";
-        setStorageStatus("Los datos procesados se guardan únicamente en este navegador. Los Excel originales NO se conservan ni se comparten entre dispositivos.");
-        $("storageSideNote").textContent = "MODO LOCAL · Para sincronizar entre equipos y conservar los Excel originales, completa config.js y configura Supabase.";
+        cloudReady = false;
+        $("storageTitle").textContent = "Configuración de nube pendiente";
+        setStorageStatus("CARGA BLOQUEADA: configura SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY en config.js y ejecuta supabase.sql. No existe modo local; no se guardó ningún Excel.");
+        $("storageSideNote").textContent = "NUBE OBLIGATORIA · El dashboard no acepta cargas si Supabase no está configurado. Así evitamos creer que un archivo quedó respaldado cuando no lo está.";
+        $("fileInput").disabled = true;
+        $("refreshBtn").disabled = true;
+        $("resetStorageBtn").disabled = true;
         return;
       }
       $("storageTitle").textContent = "Acceso privado · DTS en la nube";
-      $("storageSideNote").textContent = "MODO NUBE · Archivos Excel originales en Supabase Storage privado y datos del dashboard en PostgreSQL con acceso por usuario.";
+      $("storageSideNote").textContent = "NUBE EXCLUSIVA · Excel originales en Supabase Storage privado; datos procesados en PostgreSQL. Solo se guarda localmente la sesión de acceso, nunca los datos financieros.";
       $("fileInput").disabled = true;
       $("authForm").hidden = false;
       setStorageStatus("Conectando con el servicio de almacenamiento...");
@@ -1458,6 +836,9 @@
         if (error && error.name !== "AuthSessionMissingError") console.warn(error);
         await applyAuthSession(data?.user ? { user: data.user } : null);
       } catch (error) {
+        cloudReady = false;
+        rows = []; cloudRecords.clear();
+        $("fileInput").disabled = true;
         $("authForm").hidden = true;
         setStorageStatus("ERROR DE CONEXIÓN: " + error.message + ". No se han guardado archivos.");
         showToast("Error de conexión con Supabase.");
@@ -1468,6 +849,7 @@
       const run = ++authRunId;
       const user = session?.user || null;
       if (!user) {
+        cloudReady = false;
         currentUser = null;
         rows = []; cloudRecords.clear();
         $("loggedUser").hidden = true;
@@ -1477,7 +859,9 @@
         populateFilters(); updateDashboard();
         return;
       }
-      if (currentUser?.id === user.id && cloudRecords.size) return;
+      if (currentUser?.id === user.id && cloudReady) return;
+      cloudReady = false;
+      $("fileInput").disabled = true;
       currentUser = user;
       $("loggedUser").hidden = false;
       $("authForm").hidden = true;
@@ -1486,13 +870,38 @@
       try {
         await loadCloudRows();
         if (run !== authRunId) return;
-        setStorageStatus("Sincronizado con la nube. Tus periodos se conservan al cerrar el navegador o entrar desde otro dispositivo con esta cuenta.");
+        cloudReady = true;
+        setStorageStatus("NUBE SINCRONIZADA · Excel originales y datos procesados guardados en Supabase, disponibles con esta cuenta desde otros dispositivos.");
         $("fileInput").disabled = false;
       } catch (error) {
         if (run !== authRunId) return;
-        setStorageStatus("La sesión está activa, pero no se pudo recuperar el histórico: " + error.message + ". Verifica haber ejecutado supabase.sql.");
+        cloudReady = false;
+        rows = []; cloudRecords.clear();
+        populateFilters(); updateDashboard();
+        setStorageStatus("CARGA BLOQUEADA · No se pudo recuperar el histórico: " + error.message + ". Verifica supabase.sql y la conexión.");
         $("fileInput").disabled = true;
       }
+    }
+
+    async function refreshFromCloud() {
+      if (!CLOUD_ENABLED || !currentUser || !cloudClient || cloudBusy) {
+        return showToast("Debes iniciar sesión para sincronizar con Supabase.");
+      }
+      setCloudBusy(true);
+      cloudReady = false;
+      try {
+        setStorageStatus("Consultando la nube...");
+        await loadCloudRows();
+        cloudReady = true;
+        setStorageStatus("NUBE SINCRONIZADA · Los Excel originales y registros procesados están disponibles en otros dispositivos con la misma cuenta.");
+        showToast("Histórico actualizado desde Supabase.");
+      } catch (error) {
+        cloudReady = false;
+        rows = []; cloudRecords.clear();
+        populateFilters(); updateDashboard();
+        setStorageStatus("Error al sincronizar. Carga bloqueada hasta restablecer conexión: " + error.message);
+        showToast("No se pudo sincronizar con la nube.");
+      } finally { setCloudBusy(false); }
     }
 
     async function login(event) {
@@ -1535,19 +944,22 @@
     }
 
     async function loadCloudRows() {
-      if (!currentUser) return;
+      if (!currentUser) throw new Error("No hay una sesión de usuario activa");
+      const requestedUserId = currentUser.id;
       // Cargar paginado para no truncar históricos mayores de 1000 periodos.
       const list = [];
       let from = 0;
       while (true) {
         const { data, error } = await cloudClient.from("dts_imports")
           .select("period, rows, source_filename, storage_path, updated_at")
+          .eq("user_id", requestedUserId)
           .order("period", { ascending: true }).range(from, from + 499);
         if (error) throw error;
         list.push(...(data || []));
         if (!data || data.length < 500) break;
         from += 500;
       }
+      if (currentUser?.id !== requestedUserId) return; // Cerró sesión durante la consulta.
       cloudRecords = new Map(list.map(item => [item.period, item]));
       rows = list.flatMap(item => Array.isArray(item.rows)
         ? normalizeRows(item.rows.map(r => ({...r, periodo: item.period})), item.period)
@@ -1574,11 +986,14 @@
         return { user_id: currentUser.id, period, source_filename: file.name, storage_path: path,
           updated_at: new Date().toISOString(), rows: normalizeRows(groups[p], period) };
       });
-      const { error: dbError } = await cloudClient.from("dts_imports")
-        .upsert(records, { onConflict: "user_id,period" });
-      if (dbError) {
-        await cloudClient.storage.from(BUCKET).remove([path]);
-        throw new Error("No se pudieron guardar los datos: " + dbError.message);
+      const { data: saved, error: dbError } = await cloudClient.from("dts_imports")
+        .upsert(records, { onConflict: "user_id,period" })
+        .select("period,storage_path");
+      if (dbError || !saved || saved.length !== records.length ||
+          saved.some(item => item.storage_path !== path)) {
+        // Se evita borrar a ciegas el original si la petición quedó en estado incierto.
+        // Un administrador podrá limpiar archivos huérfanos, si los hubiera.
+        throw new Error("Los datos procesados no se confirmaron en Supabase: " + (dbError?.message || "respuesta incompleta del servidor"));
       }
       // Solo borrar originales antiguos si ningún otro periodo los necesita.
       records.forEach(record => cloudRecords.set(record.period, record));
@@ -1670,7 +1085,8 @@
     async function handleFiles(files) {
       if (!files.length) return;
       if (cloudBusy) return showToast("Ya se está procesando otra carga.");
-      if (CLOUD_ENABLED && !currentUser) return showToast("Inicia sesión para subir y guardar los Excel en la nube.");
+      if (!CLOUD_ENABLED) return showToast("Carga bloqueada: primero configura Supabase. No se guarda información local.");
+      if (!currentUser || !cloudReady || !cloudClient) return showToast("Inicia sesión y comprueba la conexión con la nube antes de subir archivos.");
       setCloudBusy(true);
       const errors = [], warnings = [];
       let imported = 0, finalPeriod = "";
@@ -1684,13 +1100,8 @@
             const parsed = await parseFile(file);
             if (!parsed.length) throw new Error("Sin registros válidos");
             warnings.push(...(parsed.warnings || []).map(m => `${file.name}: ${m}`));
-            if (CLOUD_ENABLED) {
-              $("uploadProgress").textContent = `Guardando ${file.name} en la nube...`;
-              await saveCloudFile(file, parsed);
-            } else {
-              mergeRows(parsed);
-              if (!saveRows()) throw new Error("No se pudo guardar localmente: almacén del navegador lleno");
-            }
+            $("uploadProgress").textContent = `Guardando Excel original y datos de ${file.name} en Supabase...`;
+            await saveCloudFile(file, parsed);
             imported += parsed.length;
             finalPeriod = parsed[parsed.length - 1]?.periodo || finalPeriod;
           } catch (error) {
@@ -1698,18 +1109,20 @@
             errors.push(`${file.name}: ${error.message}`);
           }
         }
-        if (CLOUD_ENABLED && imported) {
+        if (imported) {
           try { await loadCloudRows(); }
-          catch (error) { errors.push("Recarga de nube: " + error.message); }
-        } else if (imported) {
-          populateFilters(); updateDashboard();
+          catch (error) {
+            cloudReady = false;
+            errors.push("No se pudo confirmar la sincronización final: " + error.message);
+          }
         }
         if (finalPeriod && getPeriods().includes(finalPeriod)) {
           $("periodFilter").value = finalPeriod;
           $("centerFilter").value = "Todos";
           updateDashboard();
         }
-        if (imported) showToast(`${imported} registros importados${CLOUD_ENABLED ? " y respaldados en la nube" : " y guardados localmente"}.`);
+        if (imported && cloudReady && !errors.length)
+          showToast(`${imported} registros guardados en Supabase con sus Excel originales.`);
         if (warnings.length) {
           lastWarnings = warnings;
           $("uploadProgress").textContent = `AVISO DE CONCILIACIÓN: ${warnings.slice(0, 3).join(" | ")}${warnings.length > 3 ? ` (+${warnings.length - 3} más)` : ""}`;
@@ -1719,13 +1132,6 @@
           showToast("Errores al importar: " + errors.slice(0, 2).join(" | "));
         }
       } finally { setCloudBusy(false); }
-    }
-
-    function mergeRows(parsed) {
-      const normalizePeriod = value => monthInfo(value)?.label || value;
-      const periods = new Set(parsed.map(r => normalizePeriod(r.periodo)));
-      rows = rows.filter(r => !periods.has(normalizePeriod(r.periodo)));
-      rows.push(...parsed.map(r => ({ ...r, periodo: normalizePeriod(r.periodo) })));
     }
 
     async function parseFile(file) {
@@ -1747,120 +1153,196 @@
       return parseWorkbook(workbook, file.name);
     }
 
+    // Importador flexible: detecta estructura por encabezados, no por nombre de pestaña.
+    // Evita guardar un archivo "Enero a Mayo" como si fuese un único mes.
+    function headerKind(value) {
+      const t = normalizeText(value).replace(/[_\-]+/g, " ");
+      if (/\b(CENTRO(S)?( DE)? COST(O|OS)?|CENTRO(S)?|CECO|CCOSTO|AREA|UNIDAD DE NEGOCIO|CENTRO DE RESULTADO|EQUIPO)\b/.test(t)) return "centro";
+      if (/\b(INGRESO(S)?|VENTA(S)?|FACTURACION|RECAUDACION)\b/.test(t)) return "ingresos";
+      if (/\b(GASTO(S)?|COSTO(S)?|COSTE(S)?|EGRESO(S)?)\b/.test(t)) return "gastos";
+      if (/\b(UTILIDAD|RESULTADO OPERACIONAL|BENEFICIO)\b/.test(t)) return "utilidad";
+      if (/\b(MARGEN|RENTABILIDAD)\b/.test(t)) return "margen";
+      if (/^(PERIODO|PERIODOS|MES|FECHA|MES CONTABLE|MES DE INFORME|MONTH)$/.test(t)) return "periodo";
+      if (/^(ANO|ANIO|YEAR|EJERCICIO)$/.test(t)) return "anio";
+      if (/\bESTADO\b/.test(t)) return "estado";
+      if (/\bACTIVO\b/.test(t)) return "activo";
+      if (/\bSEMAFORO\b/.test(t)) return "semaforo";
+      return "";
+    }
+
+    function numericCell(value) {
+      if (typeof value === "number") return Number.isFinite(value);
+      if (value === null || value === undefined || String(value).trim() === "") return false;
+      const cleaned = String(value).trim().replace(/\s/g, "").replace(/\$/g, "").replace(/CLP/gi, "");
+      return /^\(?-?[0-9.,]+\)?$/.test(cleaned);
+    }
+
+    function yearFromText(value) {
+      const years = [...normalizeText(value).matchAll(/(?:^|\D)((?:19|20)\d{2})(?!\d)/g)].map(m => m[1]);
+      return [...new Set(years)].length === 1 ? years[0] : "";
+    }
+
+    function periodFromValue(value, fallback = "", fileYear = "") {
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return monthLabel(value.getMonth(), String(value.getFullYear()));
+      }
+      const raw = String(value ?? "").trim();
+      const info = monthInfo(raw);
+      if (info) return monthLabel(info.month, info.year || fileYear || monthInfo(fallback)?.year || "");
+      if (/^(0?[1-9]|1[0-2])$/.test(raw)) return monthLabel(Number(raw) - 1, fileYear || "");
+      return fallback && monthInfo(fallback) ? fallback : "";
+    }
+
+    function resolveSheetPeriod(sheetName, workbookPeriod, fileName) {
+      const sourceYear = yearFromText(fileName) || yearFromText(workbookPeriod);
+      const sheetInfo = monthInfo(sheetName);
+      if (sheetInfo) return monthLabel(sheetInfo.month, sheetInfo.year || sourceYear);
+      return monthInfo(workbookPeriod) ? workbookPeriod : "";
+    }
+
+    function extractPeriodFromWorkbook(matrices, fileName) {
+      for (const matrix of Object.values(matrices)) {
+        for (const row of matrix.slice(0, 16)) {
+          for (const cell of (row || []).slice(0, 12)) {
+            const match = normalizeText(cell).match(/TOTAL\s+([A-ZÑ]+)\s+((?:19|20)\d{2})/);
+            if (match) {
+              const month = monthInfo(`${match[1]} ${match[2]}`);
+              if (month) return month.label;
+            }
+          }
+        }
+      }
+      const namePeriod = monthInfo(fileName.replace(/\.[^.]+$/, ""));
+      return namePeriod ? monthLabel(namePeriod.month, namePeriod.year || "") : "";
+    }
+
     function parseWorkbook(workbook, fileName) {
       const sheetNames = workbook.SheetNames || [];
       const matrices = Object.fromEntries(sheetNames.map(name => [
         name,
         XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: null, raw: true })
       ]));
-
-      const period = extractPeriodFromWorkbook(matrices, fileName);
-
-      const centrosSheetName = sheetNames.find(name => normalizeText(name).includes("CENTROS COSTOS"));
-      if (centrosSheetName) {
-        const parsed = parseCentrosCostos(matrices[centrosSheetName], period);
-        if (parsed.length) return parsed;
-      }
-
-      const datosSheetName = sheetNames.find(name => normalizeText(name).includes("DATOS ORIGINALES"));
-      if (datosSheetName) {
-        const parsed = parseDatosOriginales(matrices[datosSheetName], period);
-        if (parsed.length) return parsed;
-      }
+      const defaultPeriod = extractPeriodFromWorkbook(matrices, fileName);
+      const year = yearFromText(fileName) || yearFromText(defaultPeriod);
+      const choices = new Map();
+      let warningList = [];
 
       for (const name of sheetNames) {
-        const parsed1 = parseCentrosCostos(matrices[name], period);
-        if (parsed1.length) return parsed1;
-        const parsed2 = parseDatosOriginales(matrices[name], period);
-        if (parsed2.length) return parsed2;
+        const matrix = matrices[name];
+        const period = resolveSheetPeriod(name, defaultPeriod, fileName);
+        const attempts = [
+          parseWideMonths(matrix, year),
+          parseCentrosCostos(matrix, period, year),
+          parseDatosOriginales(matrix, period)
+        ];
+        const valid = attempts.filter(x => x.length);
+        if (!valid.length) continue;
+        // Preferir varios meses identificados por encabezados sobre el esquema simple.
+        const picked = valid.sort((a, b) => {
+          const pa = new Set(a.map(x => x.periodo)).size;
+          const pb = new Set(b.map(x => x.periodo)).size;
+          return pb - pa || b.length - a.length;
+        })[0];
+        const byMonth = groupBy(picked, "periodo");
+        for (const [month, items] of Object.entries(byMonth)) {
+          if (!monthInfo(month)) continue; // nunca registrar un periodo ambiguo.
+          if (!choices.has(month) || choices.get(month).length < items.length) choices.set(month, items);
+        }
+        warningList.push(...(picked.warnings || []));
       }
 
-      throw new Error("No se encontró una hoja compatible. Usa 'Centros Costos' o 'Datos Originales'.");
-    }
-
-    function extractPeriodFromWorkbook(matrices, fileName) {
-      for (const matrix of Object.values(matrices)) {
-        for (const row of matrix.slice(0, 12)) {
-          for (const cell of row.slice(0, 6)) {
-            const text = String(cell ?? "");
-            const match = normalizeText(text).match(/TOTAL\s+([A-ZÑ]+)\s+(20\d{2}|19\d{2})/);
-            if (match) return `${titleCase(match[1])} ${match[2]}`;
-          }
-        }
+      if (!choices.size) {
+        const preview = sheetNames.slice(0, 5).map(name => {
+          const nonEmpty = matrices[name].find(row => row.some(x => x !== null && String(x).trim() !== ""));
+          return `${name}: ${(nonEmpty || []).filter(x => x !== null && x !== "").slice(0, 5).map(x => String(x).slice(0, 35)).join(" / ")}`;
+        }).join(" | ");
+        throw new Error("No se identificaron columnas Centro, Ingresos y Gastos ni meses válidos. " +
+          "Hojas detectadas: " + (sheetNames.join(", ") || "ninguna") + ". " +
+          "Primeras celdas: " + (preview || "vacías") +
+          ". Si el Excel reúne varios meses, debe indicar el mes en una columna, en los encabezados o en cada pestaña.");
       }
-
-      const name = fileName.replace(/\.[^.]+$/, "");
-      const period = monthInfo(name);
-      return period ? monthLabel(period.month, period.year || new Date().getFullYear()) : name;
-    }
-
-    function parseCentrosCostos(matrix, period) {
-      const headerRowIndex = matrix.findIndex(row =>
-        normalizeText(row[0]) === "CENTRO" &&
-        row.some(cell => normalizeText(cell).includes("INGRESOS")) &&
-        row.some(cell => normalizeText(cell).includes("GASTOS"))
-      );
-
-      if (headerRowIndex < 0) return [];
-
-      const headers = matrix[headerRowIndex].slice(0, 10).map(normalizeText);
-      const idx = (needle, fallback) => {
-        const found = headers.findIndex(h => h.includes(needle));
-        return found >= 0 ? found : fallback;
-      };
-
-      const cCentro = idx("CENTRO", 0);
-      const cIngresos = idx("INGRESOS", 1);
-      const cGastos = idx("GASTOS", 2);
-      const cUtilidad = idx("UTILIDAD", 3);
-      const cMargen = idx("MARGEN", 4);
-      const cEstado = idx("ESTADO", 5);
-      const cActivo = idx("ACTIVO", 8);
-      const cSemaforo = idx("SEMAFORO", 9);
-
-      const parsed = [];
-      const warnings = [];
-      for (let i = headerRowIndex + 1; i < matrix.length; i++) {
-        const row = matrix[i] || [];
-        const centro = String(row[cCentro] ?? "").trim();
-        if (!centro) continue;
-        if (normalizeText(centro) === "TOTAL") break;
-        const ingresos = toNumber(row[cIngresos]);
-        const gastos = toNumber(row[cGastos]);
-        const utilidad = ingresos - gastos;
-        if (row[cUtilidad] !== null && row[cUtilidad] !== undefined && row[cUtilidad] !== "") {
-          const excelUtilidad = toNumber(row[cUtilidad]);
-          if (Math.abs(excelUtilidad - utilidad) > 1) {
-            warnings.push(`${centro}: utilidad Excel ${fmtMoney(excelUtilidad)} ≠ calculada ${fmtMoney(utilidad)}`);
-          }
-        }
-        if (row[cMargen] !== null && row[cMargen] !== undefined && row[cMargen] !== "" && ingresos !== 0) {
-          const excelMargen = toPercent(row[cMargen]);
-          if (Math.abs(excelMargen - utilidad / ingresos) > 0.005) {
-            warnings.push(`${centro}: margen Excel ${fmtPct(excelMargen)} ≠ calculado ${fmtPct(utilidad / ingresos)}`);
-          }
-        }
-        parsed.push({
-          periodo: period,
-          centro,
-          ingresos,
-          gastos,
-          utilidad,
-          margen: row[cMargen] !== null && row[cMargen] !== undefined ? toPercent(row[cMargen]) : (ingresos ? utilidad / ingresos : 0),
-          estado: row[cEstado] || "",
-          activo: row[cActivo],
-          semaforo: row[cSemaforo] || ""
-        });
-      }
-      const normalized = normalizeRows(parsed, period);
-      normalized.warnings = warnings;
+      const result = [...choices.values()].flat();
+      const normalized = normalizeRows(result, defaultPeriod);
+      normalized.warnings = warningList;
       return normalized;
+    }
+
+    function parseCentrosCostos(matrix, period, fileYear = "") {
+      const heading = matrix.slice(0, 100).map((row, r) => {
+        const columns = {};
+        row.forEach((cell, c) => { const kind = headerKind(cell); if (kind && columns[kind] === undefined) columns[kind] = c; });
+        return { index: r, columns };
+      }).find(h => ["centro", "ingresos", "gastos"].every(k => h.columns[k] !== undefined));
+      if (!heading) return [];
+      const h = heading.columns;
+      const parsed = [], warnings = [];
+      for (let i = heading.index + 1; i < matrix.length; i++) {
+        const row = matrix[i] || [];
+        const centro = String(row[h.centro] ?? "").trim();
+        if (!centro || /^(TOTAL|TOTAL GENERAL|SUBTOTAL|RESUMEN)(\s|$)/i.test(normalizeText(centro))) continue;
+        if (!numericCell(row[h.ingresos]) && !numericCell(row[h.gastos])) continue;
+        const periodo = h.periodo !== undefined
+          ? periodFromValue(row[h.periodo], period, h.anio !== undefined ? yearFromText(row[h.anio]) || String(row[h.anio] ?? "") : fileYear)
+          : period;
+        if (!periodo) continue;
+        const ingresos = toNumber(row[h.ingresos]);
+        const gastos = toNumber(row[h.gastos]);
+        const utilidad = ingresos - gastos;
+        if (h.utilidad !== undefined && numericCell(row[h.utilidad]) && Math.abs(toNumber(row[h.utilidad]) - utilidad) > 1)
+          warnings.push(`${centro} (${periodo}): utilidad declarada ${fmtMoney(toNumber(row[h.utilidad]))} ≠ calculada ${fmtMoney(utilidad)}`);
+        if (h.margen !== undefined && numericCell(row[h.margen]) && ingresos !== 0 && Math.abs(toPercent(row[h.margen]) - utilidad / ingresos) > 0.005)
+          warnings.push(`${centro} (${periodo}): margen declarado ${fmtPct(toPercent(row[h.margen]))} ≠ calculado ${fmtPct(utilidad / ingresos)}`);
+        parsed.push({ periodo, centro, ingresos, gastos, utilidad, margen: ingresos ? utilidad / ingresos : 0 });
+      }
+      parsed.warnings = warnings;
+      return parsed;
+    }
+
+    // Tablas con meses en columnas, p. ej. "Centro | Enero ingresos | Enero gastos | Febrero ingresos | Febrero gastos".
+    // Admite asimismo dos filas de encabezado: "Enero" sobre "Ingresos/Gastos".
+    function parseWideMonths(matrix, year = "") {
+      for (let r = 0; r < Math.min(matrix.length, 80); r++) {
+        const current = matrix[r] || [];
+        const centerCol = current.findIndex(c => headerKind(c) === "centro");
+        if (centerCol < 0) continue;
+        const previous = matrix[r - 1] || [];
+        const grouping = new Map();
+        let inherited = null;
+        for (let c = 0; c < current.length; c++) {
+          if (c === centerCol) continue;
+          const direct = String(current[c] ?? "");
+          const above = String(previous[c] ?? "");
+          const ownMonth = monthInfo(direct) || monthInfo(above);
+          if (ownMonth) inherited = ownMonth;
+          const month = ownMonth || inherited;
+          const kind = headerKind(direct);
+          if (!month || !["ingresos", "gastos"].includes(kind)) continue;
+          const label = monthLabel(month.month, month.year || year);
+          if (!grouping.has(label)) grouping.set(label, {});
+          const entry = grouping.get(label);
+          if (entry[kind] === undefined) entry[kind] = c;
+        }
+        const valid = [...grouping.entries()].filter(([, cols]) => cols.ingresos !== undefined && cols.gastos !== undefined);
+        if (!valid.length) continue;
+        const parsed = [];
+        for (let i = r + 1; i < matrix.length; i++) {
+          const row = matrix[i] || [];
+          const centro = String(row[centerCol] ?? "").trim();
+          if (!centro || /^(TOTAL|TOTAL GENERAL|SUBTOTAL|RESUMEN)(\s|$)/i.test(normalizeText(centro))) continue;
+          for (const [periodo, cols] of valid) {
+            if (!numericCell(row[cols.ingresos]) && !numericCell(row[cols.gastos])) continue;
+            parsed.push({periodo, centro, ingresos: toNumber(row[cols.ingresos]), gastos: toNumber(row[cols.gastos])});
+          }
+        }
+        if (parsed.length) return parsed;
+      }
+      return [];
     }
 
     function parseDatosOriginales(matrix, period) {
       const headerRowIndex = matrix.findIndex(row =>
         row.some(cell => normalizeText(cell).startsWith("TOTAL")) &&
-        row.filter(Boolean).length >= 4
+        row.filter(Boolean).length >= 3
       );
 
       if (headerRowIndex < 0) return [];
@@ -1869,7 +1351,7 @@
       const centerCols = [];
       for (let c = 2; c < headerRow.length; c++) {
         const centro = String(headerRow[c] ?? "").trim();
-        if (centro) centerCols.push({ index: c, centro });
+        if (centro && !/^TOTAL(?:\s|$)/.test(normalizeText(centro))) centerCols.push({ index: c, centro });
       }
       if (!centerCols.length) return [];
 
@@ -2205,7 +1687,7 @@
       $("centerFilter").addEventListener("change", updateDashboard);
       COMPARISON_FILTERS.forEach(id => $(id).addEventListener("change", renderComparison));
       $("rankingMetric").addEventListener("change", updateDashboard);
-      $("refreshBtn").addEventListener("click", updateDashboard);
+      $("refreshBtn").addEventListener("click", refreshFromCloud);
       $("exportBtn").addEventListener("click", exportCSV);
       $("resetStorageBtn").addEventListener("click", resetStorage);
       $("periodRecords").addEventListener("click", event => {
