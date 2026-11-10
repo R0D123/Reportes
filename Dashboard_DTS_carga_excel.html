@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard DTS | Carga Excel</title>
+  <style>
+    :root {
+      --bg: #eef4f8;
+      --paper: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #d7e0e7;
+      --brand: #2fa7d4;
+      --brand-dark: #11759d;
+      --green: #087c3a;
+      --green-2: #0f9f52;
+      --red: #dc2626;
+      --amber: #d97706;
+      --blue: #1d4ed8;
+      --purple: #8b5cf6;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Segoe UI, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(47, 167, 212, .18), transparent 28%),
+        linear-gradient(180deg, #f8fbfd, var(--bg));
+      color: var(--ink);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      background: #0b1725;
+      color: #e5f6ff;
+      padding: 24px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: 8px 0 30px rgba(15, 23, 42, .16);
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 26px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--brand), #6ee7b7);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 19px;
+      color: white;
+      letter-spacing: -.08em;
+    }
+
+    .brand h1 {
+      font-size: 17px;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #9bc5d8;
+    }
+
+    .side-section {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #a8c4d3;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    select, input, button {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      background: rgba(255,255,255,.08);
+      color: #f8fafc;
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    select option {
+      color: #0f172a;
+      background: white;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 800;
+      transition: .15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .btn-primary {
+      border: none;
+      background: linear-gradient(135deg, var(--brand), #10b981);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,.04);
+    }
+
+    .side-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .small-note {
+      color: #9bc5d8;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    main {
+      padding: 24px;
+      min-width: 0;
+    }
+
+    .topbar {
+      background: linear-gradient(135deg, #ffffff 0%, #edf9ff 100%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: clamp(25px, 3vw, 40px);
+      line-height: 1.05;
+      letter-spacing: -.05em;
+    }
+
+    .topbar p {
+      color: var(--muted);
+      margin: 9px 0 0;
+      max-width: 920px;
+      line-height: 1.45;
+    }
+
+    .period-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      color: #075985;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green-2);
+      border-radius: 999px;
+      box-shadow: 0 0 0 5px rgba(16, 185, 129, .15);
+    }
+
+    .upload-panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .dropzone {
+      border: 2px dashed #9bd3e9;
+      background: #f1fbff;
+      border-radius: 20px;
+      min-height: 154px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      transition: .15s ease;
+    }
+
+    .dropzone.dragover {
+      background: #e0f7ff;
+      border-color: var(--brand-dark);
+      transform: scale(1.005);
+    }
+
+    .dropzone h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .dropzone p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .file-input-label {
+      margin-top: 12px;
+      display: inline-flex;
+      width: auto;
+      background: var(--brand);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .file-input-label input {
+      display: none;
+    }
+
+    .format-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .format-box h4 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .format-box ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .library-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      min-height: 118px;
+      border-radius: 18px;
+      color: white;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::after {
+      content: "";
+      position: absolute;
+      right: -42px;
+      bottom: -42px;
+      width: 110px;
+      height: 110px;
+      border-radius: 100%;
+      background: rgba(255,255,255,.13);
+    }
+
+    .kpi.blue { background: linear-gradient(135deg, #0e7490, #38bdf8); }
+    .kpi.green { background: linear-gradient(135deg, #047857, #22c55e); }
+    .kpi.red { background: linear-gradient(135deg, #991b1b, #ef4444); }
+    .kpi.indigo { background: linear-gradient(135deg, #312e81, #4f46e5); }
+    .kpi.gray { background: linear-gradient(135deg, #334155, #64748b); }
+
+    .kpi-title {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      opacity: .88;
+    }
+
+    .kpi-value {
+      margin-top: 12px;
+      font-size: clamp(21px, 2.2vw, 32px);
+      font-weight: 950;
+      letter-spacing: -.05em;
+      white-space: nowrap;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      margin-top: 8px;
+      opacity: .84;
+    }
+
+    .mini-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .mini {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-left: 8px solid var(--brand);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .mini.redline { border-left-color: var(--red); }
+    .mini.greenline { border-left-color: var(--green); }
+    .mini.amberline { border-left-color: var(--amber); }
+
+    .mini h4 {
+      color: var(--muted);
+      margin: 0;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .mini strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 20px;
+      letter-spacing: -.03em;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .panel .hint {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    canvas {
+      width: 100%;
+      height: 330px;
+      display: block;
+    }
+
+    .donut-canvas { height: 330px; }
+    .trend-canvas { height: 260px; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 980px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 13px;
+      text-align: left;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #e8f6fb;
+      color: #075985;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: .06em;
+      font-weight: 900;
+    }
+
+    tbody tr:hover {
+      background: #f1fbff;
+    }
+
+    .comparison { margin-bottom: 16px; }
+    .comparison p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .comparison-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+    .comparison-controls label { color: #475569; }
+    .comparison-controls select { background: #f8fafc; border-color: var(--line); color: var(--ink); }
+    .comparison-controls select:focus-visible { outline: 2px solid var(--brand-dark); outline-offset: 1px; }
+    .comparison table { min-width: 670px; font-variant-numeric: tabular-nums; }
+    .comparison thead th:not(:first-child), .comparison td { text-align: right; }
+    .comparison tbody th { background: transparent; color: var(--ink); font-size: 13px; text-transform: none; letter-spacing: normal; }
+    .comparison td:last-child { background: #eef8f3; font-weight: 800; }
+    .tag {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      border: 1px solid transparent;
+    }
+
+    .tag.ok { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .tag.bad { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .tag.warn { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+
+    .records {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .record-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      color: #d7edf7;
+      font-size: 13px;
+    }
+
+    .record-item button {
+      width: auto;
+      min-height: 30px;
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 9px;
+      background: rgba(239,68,68,.18);
+      color: #fecaca;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #0f172a;
+      color: white;
+      padding: 13px 16px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      max-width: 380px;
+      display: none;
+      z-index: 20;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .toast.show { display: block; }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: relative;
+        height: auto;
+      }
+
+      .kpis {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .mini-kpis {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-2, .upload-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      main {
+        padding: 14px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .kpis, .mini-kpis {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-value {
+        white-space: normal;
+      }
+    }
+
+    @media print {
+      aside, .upload-panel {
+        display: none;
+      }
+      .layout {
+        display: block;
+      }
+      main {
+        padding: 0;
+      }
+      .topbar, .panel, .kpi, .mini {
+        box-shadow: none;
+      }
+    }
+    @media (max-width: 620px) { .comparison-controls { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand">
+        <div class="logo">DTS</div>
+        <div>
+          <h1>Dashboard Control DTS</h1>
+          <p>Carga sistemática desde Excel</p>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <label for="periodFilter">Periodo</label>
+        <select id="periodFilter"></select>
+      </div>
+
+      <div class="side-section">
+        <label for="centerFilter">Centro de costo</label>
+        <select id="centerFilter"></select>
+      </div>
+
+      <div class="side-section">
+        <label for="rankingMetric">Ranking</label>
+        <select id="rankingMetric">
+          <option value="utilidad">Utilidad</option>
+          <option value="ingresos">Ingresos</option>
+          <option value="gastos">Gastos</option>
+          <option value="margen">Margen</option>
+        </select>
+      </div>
+
+      <div class="side-actions">
+        <button class="btn-primary" id="refreshBtn">Actualizar dashboard</button>
+        <button class="btn-secondary" id="exportBtn">Exportar CSV filtrado</button>
+        <button class="btn-secondary" id="resetStorageBtn">Borrar cargas guardadas</button>
+      </div>
+
+      <div class="side-section" style="margin-top: 22px;">
+        <label>Histórico cargado</label>
+        <div id="periodRecords" class="records"></div>
+      </div>
+
+      <p class="small-note">
+        Los archivos cargados se guardan en este navegador mediante almacenamiento local. No necesitas servidor ni base de datos para usar esta versión.
+      </p>
+    </aside>
+
+    <main>
+      <section class="topbar">
+        <div>
+          <h2>Resultado DTS</h2>
+          <p>
+            Panel ejecutivo para controlar ingresos, gastos, utilidad operacional, margen, centros rentables y centros en déficit.
+            La estructura está preparada para cargar nuevos archivos Excel de forma periódica.
+          </p>
+        </div>
+        <div class="period-badge"><span class="dot"></span><span id="periodBadge">Periodo actual</span></div>
+      </section>
+
+      <section class="upload-panel">
+        <div class="upload-grid">
+          <div id="dropzone" class="dropzone">
+            <div>
+              <h3>Área de carga de información</h3>
+              <p>Arrastra aquí uno o varios archivos Excel, o selecciónalos manualmente. El dashboard actualizará sus indicadores con cada carga.</p>
+              <label class="file-input-label">
+                Seleccionar Excel
+                <input id="fileInput" type="file" multiple accept=".xlsx,.xls,.csv" />
+              </label>
+              <div id="xlsxStatus" class="library-status"></div>
+            </div>
+          </div>
+
+          <div class="format-box">
+            <h4>Formato recomendado</h4>
+            <ul>
+              <li>Hoja <b>Centros Costos</b>: Centro, Ingresos, Gastos, Utilidad, Margen y Estado.</li>
+              <li>También lee la hoja <b>Datos Originales</b> usando las cuentas 4 - Ingresos y 31 a 37 - Gastos.</li>
+              <li>El periodo se toma desde “TOTAL MES AÑO” o desde el nombre del archivo.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpis">
+        <article class="kpi blue">
+          <div class="kpi-title">Ingresos totales</div>
+          <div id="kpiIngresos" class="kpi-value">$0</div>
+          <div class="kpi-sub">Base total consolidada</div>
+        </article>
+
+        <article class="kpi green">
+          <div class="kpi-title">Utilidad operacional</div>
+          <div id="kpiUtilidad" class="kpi-value">$0</div>
+          <div class="kpi-sub">Ingresos menos gastos</div>
+        </article>
+
+        <article class="kpi indigo">
+          <div class="kpi-title">Margen operacional</div>
+          <div id="kpiMargen" class="kpi-value">0,0%</div>
+          <div class="kpi-sub">Meta visual: &gt;10% fuerte</div>
+        </article>
+
+        <article class="kpi gray">
+          <div class="kpi-title">Gastos totales</div>
+          <div id="kpiGastos" class="kpi-value">$0</div>
+          <div class="kpi-sub">Control estructura de gasto</div>
+        </article>
+
+        <article class="kpi red">
+          <div class="kpi-title">Estado general</div>
+          <div id="kpiEstado" class="kpi-value">-</div>
+          <div class="kpi-sub">Fuerte / Ajustado / En riesgo</div>
+        </article>
+      </section>
+
+      <section class="panel comparison" aria-labelledby="comparisonTitle">
+        <h3 id="comparisonTitle">Comparación mensual y acumulado anual</h3>
+        <p>El comparativo y el acumulado siguen el filtro de centro de costo.</p>
+        <div class="comparison-controls">
+          <div>
+            <label for="compareBase">Mes base</label>
+            <select id="compareBase" disabled><option value="">Elige un periodo</option></select>
+          </div>
+          <div>
+            <label for="compareTarget">Mes a comparar</label>
+            <select id="compareTarget" disabled><option value="">Elige un periodo</option></select>
+          </div>
+          <div>
+            <label for="compareYear">Año del acumulado</label>
+            <select id="compareYear" disabled><option value="">Elige un periodo</option></select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table aria-labelledby="comparisonTitle">
+            <thead>
+              <tr>
+                <th scope="col">Indicador</th>
+                <th scope="col" id="compareBaseHeading">Mes base</th>
+                <th scope="col" id="compareTargetHeading">Mes comparado</th>
+                <th scope="col" title="Mes comparado menos mes base">Diferencia</th>
+                <th scope="col" title="Diferencia dividida por el valor absoluto del mes base">Variación</th>
+                <th scope="col" id="compareAnnualHeading">Acumulado anual</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonBody"></tbody>
+          </table>
+        </div>
+        <p id="compareCoverage" role="status">Abre el HTML descargado en tu navegador para usar los filtros.</p>
+      </section>
+
+      <section class="mini-kpis">
+        <article class="mini greenline">
+          <h4>Centros rentables</h4>
+          <strong id="miniRentables">0</strong>
+        </article>
+        <article class="mini redline">
+          <h4>Centros en déficit</h4>
+          <strong id="miniDeficit">0</strong>
+        </article>
+        <article class="mini greenline">
+          <h4>Mejor centro</h4>
+          <strong id="miniMejor">-</strong>
+        </article>
+        <article class="mini redline">
+          <h4>Peor centro</h4>
+          <strong id="miniPeor">-</strong>
+        </article>
+      </section>
+
+      <section class="mini-kpis">
+        <article class="mini">
+          <h4>Margen total</h4>
+          <strong id="miniMargen">0,0%</strong>
+        </article>
+        <article class="mini amberline">
+          <h4>% centros rentables</h4>
+          <strong id="miniPctRentables">0,0%</strong>
+        </article>
+        <article class="mini greenline">
+          <h4>Cobertura de gastos</h4>
+          <strong id="miniCobertura">0,0x</strong>
+        </article>
+        <article class="mini">
+          <h4>Centros evaluados</h4>
+          <strong id="miniCentros">0</strong>
+        </article>
+      </section>
+
+      <section class="grid-2">
+        <article class="panel">
+          <div class="panel-header">
+            <h3>Ingresos vs gastos por centro</h3>
+            <span class="hint">Comparativo operacional</span>
+          </div>
+          <canvas id="barChart"></canvas>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h3>Distribución de ingresos</h3>
+            <span class="hint">Participación por centro</span>
+          </div>
+          <canvas id="donutChart" class="donut-canvas"></canvas>
+        </article>
+      </section>
+
+      <section class="grid-2">
+        <article class="panel">
+          <div class="panel-header">
+            <h3>Utilidad por centro</h3>
+            <span class="hint">Rentabilidad / déficit</span>
+          </div>
+          <canvas id="utilityChart"></canvas>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h3>Tendencia por periodo</h3>
+            <span class="hint">Histórico de cargas</span>
+          </div>
+          <canvas id="trendChart" class="trend-canvas"></canvas>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Detalle consolidado</h3>
+          <span id="tableCount" class="hint">0 registros</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th>Centro</th>
+                <th>Ingresos</th>
+                <th>Gastos</th>
+                <th>Utilidad</th>
+                <th>Margen</th>
+                <th>Part. ingresos</th>
+                <th>Part. gastos</th>
+                <th>Estado</th>
+                <th>Semáforo</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const DEFAULT_ROWS = [
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Arriendo Oficina",
+    "ingresos": 4696634,
+    "gastos": 394575,
+    "utilidad": 4302059,
+    "margen": 0.9159877052374105,
+    "estado": "Rentable",
+    "partIngresos": 0.04069229635494675,
+    "partGastos": 0.004987318629299416,
+    "activo": 1,
+    "semaforo": "Verde"
+  },
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Gasto Fuera Sociedad",
+    "ingresos": 0,
+    "gastos": 55958,
+    "utilidad": -55958,
+    "margen": 0,
+    "estado": "Déficit",
+    "partIngresos": 0,
+    "partGastos": 0.0007072936092209003,
+    "activo": 1,
+    "semaforo": "Amarillo"
+  },
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Lavado",
+    "ingresos": 77943639,
+    "gastos": 43870501,
+    "utilidad": 34073138,
+    "margen": 0.4371509777725415,
+    "estado": "Rentable",
+    "partIngresos": 0.6753146311104901,
+    "partGastos": 0.554510972347459,
+    "activo": 1,
+    "semaforo": "Verde"
+  },
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Mecanica Base Concon",
+    "ingresos": 21860035,
+    "gastos": 27040135,
+    "utilidad": -5180100,
+    "margen": -0.23696668372214408,
+    "estado": "Déficit",
+    "partIngresos": 0.18939841225641776,
+    "partGastos": 0.34177981125076645,
+    "activo": 1,
+    "semaforo": "Rojo"
+  },
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Mecanica Base Coronel",
+    "ingresos": 10917951,
+    "gastos": 7754490,
+    "utilidad": 3163461,
+    "margen": 0.28974859843206846,
+    "estado": "Rentable",
+    "partIngresos": 0.09459466027814542,
+    "partGastos": 0.09801460416325421,
+    "activo": 1,
+    "semaforo": "Verde"
+  },
+  {
+    "periodo": "Marzo 2026",
+    "centro": "Bed Slide",
+    "ingresos": 0,
+    "gastos": 0,
+    "utilidad": 0,
+    "margen": 0,
+    "estado": "Neutro",
+    "partIngresos": 0,
+    "partGastos": 0,
+    "activo": 0,
+    "semaforo": "Amarillo"
+  }
+];
+    const STORAGE_KEY = "dts_dashboard_excel_v2";
+    let xlsxLoadPromise = null;
+
+    let rows = loadStoredRows();
+    let filteredRows = [];
+
+    const MONTHS = [
+      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    const MONTH_INDEX = new Map(MONTHS.flatMap((name, index) => [
+      [name.toUpperCase(), index], [name.slice(0, 3).toUpperCase(), index]
+    ]));
+    MONTH_INDEX.set("SEPT", 8);
+    MONTH_INDEX.set("SETIEMBRE", 8);
+    const UNDATED_YEAR = "sin-anio";
+    const COMPARISON_FILTERS = ["compareBase", "compareTarget", "compareYear"];
+
+    const PALETTE = ["#0f766e", "#0284c7", "#7c3aed", "#db2777", "#16a34a", "#f97316", "#334155", "#e11d48"];
+
+    const $ = (id) => document.getElementById(id);
+
+    function loadStoredRows() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (Array.isArray(saved) && saved.length) return saved;
+      } catch (e) {}
+      return structuredClone(DEFAULT_ROWS);
+    }
+
+    function saveRows() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function normalizeText(value) {
+      return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toUpperCase();
+    }
+
+    function titleCase(value) {
+      return String(value ?? "").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function toNumber(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      if (typeof value === "number" && isFinite(value)) return value;
+      let s = String(value)
+        .replace(/\s/g, "")
+        .replace(/CLP/gi, "")
+        .replace(/\$/g, "")
+        .replace(/%/g, "");
+      if (s.includes(",") && s.includes(".")) {
+        s = s.replace(/\./g, "").replace(",", ".");
+      } else if (s.includes(",")) {
+        s = s.replace(",", ".");
+      }
+      const n = Number(s);
+      return isFinite(n) ? n : 0;
+    }
+
+    function toPercent(value) {
+      const n = toNumber(value);
+      if (Math.abs(n) > 1.5) return n / 100;
+      return n;
+    }
+
+    function fmtMoney(value) {
+      return new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0
+      }).format(Math.round(value || 0));
+    }
+
+    function fmtNum(value) {
+      return new Intl.NumberFormat("es-CL", {
+        maximumFractionDigits: 0
+      }).format(value || 0);
+    }
+
+    function fmtPct(value) {
+      return new Intl.NumberFormat("es-CL", {
+        style: "percent",
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      }).format(value || 0);
+    }
+
+    const comparisonPercent = new Intl.NumberFormat("es-CL", {
+      style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+    const pointFormatter = new Intl.NumberFormat("es-CL", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+
+    function unique(array) {
+      return [...new Set(array.filter(v => v !== null && v !== undefined && String(v).trim() !== ""))];
+    }
+
+    function sum(array, key) {
+      return array.reduce((acc, row) => acc + Number(row[key] || 0), 0);
+    }
+
+    function groupBy(array, key) {
+      return array.reduce((acc, row) => {
+        const k = row[key] ?? "";
+        if (!acc[k]) acc[k] = [];
+        acc[k].push(row);
+        return acc;
+      }, {});
+    }
+
+    function getPeriods() {
+      return unique(rows.map(r => r.periodo));
+    }
+
+    function monthLabel(month, year) {
+      return year ? MONTHS[month] + " " + year : MONTHS[month];
+    }
+
+    function monthInfo(value) {
+      const text = normalizeText(value);
+      const iso = text.match(/^((?:19|20)\d{2})[-/.](\d{1,2})(?:[-/.]\d{1,2})?$/);
+      const local = text.match(/^(?:\d{1,2}[-/.])?(\d{1,2})[-/.]((?:19|20)\d{2})$/);
+      let month, year;
+      if (iso || local) {
+        month = Number(iso ? iso[2] : local[1]) - 1;
+        year = iso ? iso[1] : local[2];
+      } else {
+        const words = text.match(/[A-Z]+/g) || [];
+        const months = [...new Set(words.map(word => MONTH_INDEX.get(word)).filter(Number.isInteger))];
+        const years = [...new Set([...text.matchAll(/(?:^|\D)((?:19|20)\d{2})(?!\d)/g)].map(match => match[1]))];
+        if (months.length !== 1 || years.length > 1) return null;
+        month = months[0];
+        year = years[0] || "";
+      }
+      if (!MONTHS[month]) return null;
+      return { month, year, label: monthLabel(month, year) };
+    }
+
+    function periodSort(a, b) {
+      const score = value => {
+        const month = monthInfo(value);
+        if (month) return Number(month.year) * 12 + month.month;
+        return Number(normalizeText(value).match(/(?:19|20)\d{2}/)?.[0] || 0) * 12;
+      };
+      return score(a) - score(b);
+    }
+
+    function normalizeRows(inputRows, fallbackPeriod) {
+      const period = fallbackPeriod || "Periodo sin nombre";
+      let clean = inputRows
+        .filter(row => row && row.centro && normalizeText(row.centro) !== "TOTAL")
+        .map(row => {
+          const ingresos = toNumber(row.ingresos);
+          const gastos = toNumber(row.gastos);
+          const utilidad = row.utilidad === undefined || row.utilidad === null ? ingresos - gastos : toNumber(row.utilidad);
+          const margen = ingresos ? utilidad / ingresos : 0;
+          const estado = utilidad > 0 ? "Rentable" : utilidad < 0 ? "Déficit" : "Neutro";
+          const semaforo = utilidad < 0 ? "Rojo" : margen >= 0.10 ? "Verde" : "Amarillo";
+          return {
+            periodo: row.periodo || period,
+            centro: String(row.centro).trim(),
+            ingresos,
+            gastos,
+            utilidad,
+            margen,
+            estado,
+            semaforo,
+            activo: row.activo === undefined ? 1 : toNumber(row.activo)
+          };
+        });
+
+      const totalIngresos = sum(clean, "ingresos");
+      const totalGastos = sum(clean, "gastos");
+
+      clean = clean.map(row => ({
+        ...row,
+        partIngresos: totalIngresos ? row.ingresos / totalIngresos : 0,
+        partGastos: totalGastos ? row.gastos / totalGastos : 0
+      }));
+
+      return clean;
+    }
+
+    function calcTotals(data) {
+      const ingresos = sum(data, "ingresos");
+      const gastos = sum(data, "gastos");
+      const utilidad = ingresos - gastos;
+      return { ingresos, gastos, utilidad, margen: ingresos ? utilidad / ingresos : null };
+    }
+
+    function calcSummary(data) {
+      const { ingresos, gastos, utilidad, margen: ratio } = calcTotals(data);
+      const margen = ratio ?? 0;
+      const centros = unique(data.map(r => r.centro)).length;
+      const rentables = unique(data.filter(r => r.utilidad > 0).map(r => r.centro)).length;
+      const deficit = unique(data.filter(r => r.utilidad < 0).map(r => r.centro)).length;
+      const pctRentables = centros ? rentables / centros : 0;
+      const cobertura = gastos ? ingresos / gastos : 0;
+      const estadoGeneral = margen >= 0.10 ? "Fuerte" : margen >= 0 ? "Ajustado" : "En riesgo";
+
+      const byCenter = Object.entries(groupBy(data, "centro")).map(([centro, items]) => {
+        const totals = calcTotals(items);
+        return { centro, ...totals, margen: totals.margen ?? 0 };
+      });
+
+      const best = byCenter.length ? [...byCenter].sort((a,b) => b.utilidad - a.utilidad)[0] : null;
+      const worst = byCenter.length ? [...byCenter].sort((a,b) => a.utilidad - b.utilidad)[0] : null;
+
+      return { ingresos, gastos, utilidad, margen, centros, rentables, deficit, pctRentables, cobertura, estadoGeneral, best, worst, byCenter };
+    }
+
+    function setComparisonOptions(id, options, fallback, retain, placeholder = "") {
+      const select = $(id);
+      const value = retain && options.some(([key]) => key === select.value) ? select.value : fallback;
+      const empty = placeholder || (!options.length ? "Sin meses cargados" : "");
+      select.innerHTML = (empty ? `<option value="">${empty}</option>` : "") +
+        options.map(([key, label]) => `<option value="${escapeAttr(key)}">${escapeHtml(label)}</option>`).join("");
+      select.value = value;
+      select.disabled = !options.length;
+    }
+
+    function populateComparisonOptions(periods) {
+      const months = new Map();
+      for (const value of periods) {
+        const month = monthInfo(value);
+        if (month) months.set(month.label, month);
+      }
+      const monthList = [...months.values()];
+      const years = unique(monthList.map(month => month.year || UNDATED_YEAR));
+      const yearOptions = years.map(year => [year, year === UNDATED_YEAR ? "Sin año informado" : year]);
+      setComparisonOptions("compareYear", yearOptions, years[years.length - 1] || "", true);
+
+      const selectedYear = $("compareYear").value;
+      const latest = monthList.filter(month => (month.year || UNDATED_YEAR) === selectedYear);
+      const monthOptions = monthList.map(month => [month.label, month.label]);
+      const retainPair = months.has($("compareBase").value) && months.has($("compareTarget").value);
+      setComparisonOptions("compareBase", monthOptions, latest[latest.length - 2]?.label || "", retainPair, "Elige un mes");
+      setComparisonOptions("compareTarget", monthOptions, latest[latest.length - 1]?.label || "", retainPair, "Elige un mes");
+    }
+
+    function calcComparison(data, baseLabel, targetLabel, year) {
+      const periods = new Map();
+      const base = [], target = [], annual = [];
+      const covered = new Set();
+      for (const row of data) {
+        if (!periods.has(row.periodo)) periods.set(row.periodo, monthInfo(row.periodo));
+        const period = periods.get(row.periodo);
+        if (!period) continue;
+        if (period.label === baseLabel) base.push(row);
+        if (period.label === targetLabel) target.push(row);
+        if ((period.year || UNDATED_YEAR) === year) {
+          annual.push(row);
+          covered.add(period.month);
+        }
+      }
+      return {
+        base: base.length ? calcTotals(base) : null,
+        target: target.length ? calcTotals(target) : null,
+        annual: annual.length ? calcTotals(annual) : null,
+        months: [...covered].sort((a, b) => a - b).map(month => MONTHS[month])
+      };
+    }
+
+    function formatChange(value, format) {
+      return value === null ? "—" : (value > 0 ? "+" : "") + format(value);
+    }
+
+    function renderComparison() {
+      const baseLabel = $("compareBase").value;
+      const targetLabel = $("compareTarget").value;
+      const year = $("compareYear").value;
+      const { base, target, annual, months } = calcComparison(getFilteredRows("Todos"), baseLabel, targetLabel, year);
+      $("compareBaseHeading").textContent = baseLabel || "Mes base";
+      $("compareTargetHeading").textContent = targetLabel || "Mes comparado";
+      $("compareAnnualHeading").textContent = year && year !== UNDATED_YEAR ? "Acumulado " + year : "Acumulado anual";
+      const metrics = [["ingresos", "Ingresos"], ["gastos", "Gastos"], ["utilidad", "Utilidad"], ["margen", "Margen"]];
+      const formatPct = value => comparisonPercent.format(value);
+      $("comparisonBody").innerHTML = metrics.map(([key, label]) => {
+        const first = base?.[key] ?? null, second = target?.[key] ?? null, total = annual?.[key] ?? null;
+        const difference = first === null || second === null ? null : second - first;
+        const isMargin = key === "margen";
+        const format = isMargin ? formatPct : fmtMoney;
+        const differenceFormat = isMargin ? value => pointFormatter.format(value * 100) + " p.p." : fmtMoney;
+        const variation = isMargin || difference === null || first === 0 ? null : difference / Math.abs(first);
+        return `<tr>
+          <th scope="row">${label}</th>
+          <td>${first === null ? "—" : format(first)}</td>
+          <td>${second === null ? "—" : format(second)}</td>
+          <td>${formatChange(difference, differenceFormat)}</td>
+          <td>${formatChange(variation, formatPct)}</td>
+          <td>${total === null ? "—" : format(total)}</td>
+        </tr>`;
+      }).join("");
+
+      if (months.length) {
+        const count = months.length === 1 ? "1 mes" : months.length + " meses";
+        const instruction = $("compareBase").options.length === 2 ? " Carga otro mes para comparar." : "";
+        $("compareCoverage").textContent = count + " en el acumulado · " + months.join(", ") + "." + instruction;
+      } else {
+        $("compareCoverage").textContent = year
+          ? "Sin registros para el acumulado con los filtros seleccionados."
+          : "Carga un archivo con un mes y un año en el encabezado o el nombre.";
+      }
+    }
+
+    function populateFilters() {
+      const periods = getPeriods().sort(periodSort);
+      const currentPeriod = $("periodFilter").value || periods[periods.length - 1] || "Todos";
+      const centers = unique(rows.map(r => r.centro)).sort((a,b) => a.localeCompare(b, "es"));
+
+      $("periodFilter").innerHTML = [
+        `<option value="Todos">Todos</option>`,
+        ...periods.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`)
+      ].join("");
+
+      $("centerFilter").innerHTML = [
+        `<option value="Todos">Todos</option>`,
+        ...centers.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`)
+      ].join("");
+
+      $("periodFilter").value = periods.includes(currentPeriod) ? currentPeriod : (periods[periods.length - 1] || "Todos");
+      $("centerFilter").value = centers.includes($("centerFilter").value) ? $("centerFilter").value : "Todos";
+      populateComparisonOptions(periods);
+      renderPeriodRecords();
+    }
+
+    function getFilteredRows(period = $("periodFilter").value) {
+      const center = $("centerFilter").value;
+      return rows.filter(row => {
+        const byPeriod = period === "Todos" || row.periodo === period;
+        const byCenter = center === "Todos" || row.centro === center;
+        return byPeriod && byCenter;
+      });
+    }
+
+    function updateDashboard() {
+      filteredRows = getFilteredRows();
+      const s = calcSummary(filteredRows);
+      $("kpiIngresos").textContent = fmtMoney(s.ingresos);
+      $("kpiGastos").textContent = fmtMoney(s.gastos);
+      $("kpiUtilidad").textContent = fmtMoney(s.utilidad);
+      $("kpiMargen").textContent = fmtPct(s.margen);
+      $("kpiEstado").textContent = s.estadoGeneral;
+
+      $("miniRentables").textContent = fmtNum(s.rentables);
+      $("miniDeficit").textContent = fmtNum(s.deficit);
+      $("miniMejor").textContent = s.best ? `${s.best.centro} · ${fmtMoney(s.best.utilidad)}` : "-";
+      $("miniPeor").textContent = s.worst ? `${s.worst.centro} · ${fmtMoney(s.worst.utilidad)}` : "-";
+      $("miniMargen").textContent = fmtPct(s.margen);
+      $("miniPctRentables").textContent = fmtPct(s.pctRentables);
+      $("miniCobertura").textContent = `${s.cobertura.toFixed(1).replace(".", ",")}x`;
+      $("miniCentros").textContent = fmtNum(s.centros);
+
+      $("periodBadge").textContent = $("periodFilter").value === "Todos" ? "Todos los periodos" : $("periodFilter").value;
+
+      renderTable(filteredRows);
+      renderComparison();
+      if (!$("barChart").getContext("2d")) return;
+      drawBarChart(s.byCenter);
+      drawDonutChart(s.byCenter);
+      drawUtilityChart(s.byCenter);
+      drawTrendChart();
+    }
+
+    function renderTable(data) {
+      $("tableCount").textContent = `${data.length} registros`;
+      $("tableBody").innerHTML = data.map(row => {
+        const tagClass = row.utilidad < 0 ? "bad" : row.utilidad === 0 ? "warn" : "ok";
+        return `
+          <tr>
+            <td>${escapeHtml(row.periodo)}</td>
+            <td>${escapeHtml(row.centro)}</td>
+            <td>${fmtMoney(row.ingresos)}</td>
+            <td>${fmtMoney(row.gastos)}</td>
+            <td>${fmtMoney(row.utilidad)}</td>
+            <td>${fmtPct(row.margen)}</td>
+            <td>${fmtPct(row.partIngresos)}</td>
+            <td>${fmtPct(row.partGastos)}</td>
+            <td><span class="tag ${tagClass}">${escapeHtml(row.estado)}</span></td>
+            <td>${semaphoreIcon(row.semaforo)} ${escapeHtml(row.semaforo)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function semaphoreIcon(value) {
+      const n = normalizeText(value);
+      if (n.includes("VERDE")) return "🟢";
+      if (n.includes("ROJO")) return "🔴";
+      return "🟡";
+    }
+
+    function renderPeriodRecords() {
+      const periods = getPeriods().sort(periodSort);
+      $("periodRecords").innerHTML = periods.map(period => {
+        const count = rows.filter(r => r.periodo === period).length;
+        return `
+          <div class="record-item">
+            <span>${escapeHtml(period)} · ${count} centros</span>
+            <button type="button" data-period="${escapeAttr(period)}">Eliminar</button>
+          </div>
+        `;
+      }).join("") || `<div class="small-note">No hay cargas guardadas.</div>`;
+    }
+
+    function deletePeriod(period) {
+      if (!confirm(`¿Eliminar el periodo "${period}" del histórico?`)) return;
+      rows = rows.filter(r => r.periodo !== period);
+      if (!rows.length) rows = structuredClone(DEFAULT_ROWS);
+      const saved = saveRows();
+      populateFilters();
+      updateDashboard();
+      showToast(saved ? "Periodo eliminado." : "Periodo eliminado de esta sesión.");
+    }
+
+    function resetStorage() {
+      if (!confirm("¿Borrar todas las cargas guardadas y volver a los datos iniciales?")) return;
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      rows = structuredClone(DEFAULT_ROWS);
+      populateFilters();
+      updateDashboard();
+      showToast("Se restauraron los datos iniciales.");
+    }
+
+    function exportCSV() {
+      const data = getFilteredRows();
+      const headers = ["Periodo", "Centro", "Ingresos", "Gastos", "Utilidad", "Margen", "Participacion ingresos", "Participacion gastos", "Estado", "Semaforo"];
+      const lines = [headers, ...data.map(r => [
+        r.periodo, r.centro, Math.round(r.ingresos), Math.round(r.gastos), Math.round(r.utilidad),
+        (r.margen * 100).toFixed(2), (r.partIngresos * 100).toFixed(2), (r.partGastos * 100).toFixed(2),
+        r.estado, r.semaforo
+      ])];
+
+      const csv = lines.map(line => line.map(value => `"${String(value).replace(/"/g, '""')}"`).join(";")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dashboard_dts_filtrado.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, m => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[m]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+    function setupUpload() {
+      const status = $("xlsxStatus");
+      status.textContent = "Cargando motor Excel para lectura .xlsx/.xls...";
+      loadXlsxLibrary().then(ok => {
+        status.textContent = ok
+          ? "Motor Excel activo: puedes cargar .xlsx, .xls o .csv."
+          : "Aviso: no se pudo cargar la librería XLSX. CSV funciona como alternativa sin internet.";
+      });
+
+      const dropzone = $("dropzone");
+      const input = $("fileInput");
+
+      input.addEventListener("change", () => {
+        const files = Array.from(input.files);
+        input.value = "";
+        return handleFiles(files);
+      });
+
+      ["dragenter", "dragover"].forEach(eventName => {
+        dropzone.addEventListener(eventName, e => {
+          e.preventDefault();
+          dropzone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(eventName => {
+        dropzone.addEventListener(eventName, e => {
+          e.preventDefault();
+          dropzone.classList.remove("dragover");
+        });
+      });
+
+      dropzone.addEventListener("drop", e => handleFiles([...e.dataTransfer.files]));
+    }
+
+    function loadXlsxLibrary() {
+      if (window.XLSX) return Promise.resolve(true);
+      if (xlsxLoadPromise) return xlsxLoadPromise;
+
+      xlsxLoadPromise = new Promise(resolve => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+        script.async = true;
+
+        const timer = setTimeout(() => {
+          resolve(false);
+        }, 8000);
+
+        script.onload = () => {
+          clearTimeout(timer);
+          resolve(true);
+        };
+
+        script.onerror = () => {
+          clearTimeout(timer);
+          resolve(false);
+        };
+
+        document.head.appendChild(script);
+      });
+
+      return xlsxLoadPromise;
+    }
+
+    async function handleFiles(files) {
+      if (!files.length) return;
+      const imported = [];
+      const errors = [];
+
+      for (const file of files) {
+        try {
+          const parsed = await parseFile(file);
+          imported.push(...parsed);
+        } catch (error) {
+          console.error(error);
+          errors.push(`${file.name}: ${error.message}`);
+        }
+      }
+
+      if (imported.length) {
+        const periods = unique(imported.map(r => r.periodo));
+        const periodKey = value => monthInfo(value)?.label || value;
+        const keys = new Set(periods.map(periodKey));
+        rows = rows.filter(row => !keys.has(periodKey(row.periodo)));
+        rows = [...rows, ...imported];
+        const saved = saveRows();
+        populateFilters();
+        $("periodFilter").value = periods[periods.length - 1];
+        $("centerFilter").value = "Todos";
+        updateDashboard();
+        const location = saved ? "" : " Datos disponibles en esta sesión.";
+        showToast(`${imported.length} registros incorporados.${location}`);
+      }
+
+      if (errors.length) {
+        showToast("Algunos archivos no pudieron leerse: " + errors.join(" | "));
+      }
+    }
+
+    async function parseFile(file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (ext === "csv") {
+        const text = await file.text();
+        return parseCSV(text, file.name);
+      }
+
+      if (!window.XLSX) {
+        const loaded = await loadXlsxLibrary();
+        if (!loaded || !window.XLSX) {
+          throw new Error("No está disponible la librería XLSX para leer archivos Excel.");
+        }
+      }
+
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array", cellDates: true, raw: true });
+      return parseWorkbook(workbook, file.name);
+    }
+
+    function parseWorkbook(workbook, fileName) {
+      const sheetNames = workbook.SheetNames || [];
+      const matrices = Object.fromEntries(sheetNames.map(name => [
+        name,
+        XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: null, raw: true })
+      ]));
+
+      const period = extractPeriodFromWorkbook(matrices, fileName);
+
+      const centrosSheetName = sheetNames.find(name => normalizeText(name).includes("CENTROS COSTOS"));
+      if (centrosSheetName) {
+        const parsed = parseCentrosCostos(matrices[centrosSheetName], period);
+        if (parsed.length) return parsed;
+      }
+
+      const datosSheetName = sheetNames.find(name => normalizeText(name).includes("DATOS ORIGINALES"));
+      if (datosSheetName) {
+        const parsed = parseDatosOriginales(matrices[datosSheetName], period);
+        if (parsed.length) return parsed;
+      }
+
+      for (const name of sheetNames) {
+        const parsed1 = parseCentrosCostos(matrices[name], period);
+        if (parsed1.length) return parsed1;
+        const parsed2 = parseDatosOriginales(matrices[name], period);
+        if (parsed2.length) return parsed2;
+      }
+
+      throw new Error("No se encontró una hoja compatible. Usa 'Centros Costos' o 'Datos Originales'.");
+    }
+
+    function extractPeriodFromWorkbook(matrices, fileName) {
+      for (const matrix of Object.values(matrices)) {
+        for (const row of matrix.slice(0, 12)) {
+          for (const cell of row.slice(0, 6)) {
+            const text = String(cell ?? "");
+            const match = normalizeText(text).match(/TOTAL\s+([A-ZÑ]+)\s+(20\d{2}|19\d{2})/);
+            if (match) return `${titleCase(match[1])} ${match[2]}`;
+          }
+        }
+      }
+
+      const name = fileName.replace(/\.[^.]+$/, "");
+      const period = monthInfo(name);
+      return period ? monthLabel(period.month, period.year || new Date().getFullYear()) : name;
+    }
+
+    function parseCentrosCostos(matrix, period) {
+      const headerRowIndex = matrix.findIndex(row =>
+        normalizeText(row[0]) === "CENTRO" &&
+        row.some(cell => normalizeText(cell).includes("INGRESOS")) &&
+        row.some(cell => normalizeText(cell).includes("GASTOS"))
+      );
+
+      if (headerRowIndex < 0) return [];
+
+      const headers = matrix[headerRowIndex].slice(0, 10).map(normalizeText);
+      const idx = (needle, fallback) => {
+        const found = headers.findIndex(h => h.includes(needle));
+        return found >= 0 ? found : fallback;
+      };
+
+      const cCentro = idx("CENTRO", 0);
+      const cIngresos = idx("INGRESOS", 1);
+      const cGastos = idx("GASTOS", 2);
+      const cUtilidad = idx("UTILIDAD", 3);
+      const cMargen = idx("MARGEN", 4);
+      const cEstado = idx("ESTADO", 5);
+      const cActivo = idx("ACTIVO", 8);
+      const cSemaforo = idx("SEMAFORO", 9);
+
+      const parsed = [];
+      for (let i = headerRowIndex + 1; i < matrix.length; i++) {
+        const row = matrix[i] || [];
+        const centro = String(row[cCentro] ?? "").trim();
+        if (!centro) continue;
+        if (normalizeText(centro) === "TOTAL") break;
+        const ingresos = toNumber(row[cIngresos]);
+        const gastos = toNumber(row[cGastos]);
+        const utilidad = row[cUtilidad] === null || row[cUtilidad] === undefined ? ingresos - gastos : toNumber(row[cUtilidad]);
+        parsed.push({
+          periodo: period,
+          centro,
+          ingresos,
+          gastos,
+          utilidad,
+          margen: row[cMargen] !== null && row[cMargen] !== undefined ? toPercent(row[cMargen]) : (ingresos ? utilidad / ingresos : 0),
+          estado: row[cEstado] || "",
+          activo: row[cActivo],
+          semaforo: row[cSemaforo] || ""
+        });
+      }
+      return normalizeRows(parsed, period);
+    }
+
+    function parseDatosOriginales(matrix, period) {
+      const headerRowIndex = matrix.findIndex(row =>
+        row.some(cell => normalizeText(cell).startsWith("TOTAL")) &&
+        row.filter(Boolean).length >= 4
+      );
+
+      if (headerRowIndex < 0) return [];
+
+      const headerRow = matrix[headerRowIndex];
+      const centerCols = [];
+      for (let c = 2; c < headerRow.length; c++) {
+        const centro = String(headerRow[c] ?? "").trim();
+        if (centro) centerCols.push({ index: c, centro });
+      }
+      if (!centerCols.length) return [];
+
+      const ingresosRow = matrix.find(row => normalizeText(row[0]) === "4 - INGRESOS");
+      if (!ingresosRow) return [];
+
+      const expenseRows = matrix.filter(row => /^3[1-7]\s*-/.test(normalizeText(row[0])));
+      const gastosTotalRow = matrix.find(row => normalizeText(row[0]) === "3 - GASTOS");
+
+      const parsed = centerCols.map(({ index, centro }) => {
+        const ingresos = toNumber(ingresosRow[index]);
+        let gastos = 0;
+        if (expenseRows.length) {
+          gastos = expenseRows.reduce((acc, row) => acc + toNumber(row[index]), 0);
+        } else if (gastosTotalRow) {
+          gastos = toNumber(gastosTotalRow[index]);
+        }
+        return {
+          periodo: period,
+          centro: titleCase(centro),
+          ingresos,
+          gastos,
+          utilidad: ingresos - gastos
+        };
+      });
+
+      return normalizeRows(parsed, period);
+    }
+
+    function parseCSV(text, fileName) {
+      const rowsCsv = text.trim().split(/\r?\n/).map(line => splitCSVLine(line));
+      const headers = rowsCsv.shift().map(normalizeText);
+      const find = (needle) => headers.findIndex(h => h.includes(needle));
+
+      const iPeriodo = find("PERIODO");
+      const iCentro = find("CENTRO");
+      const iIngresos = find("INGRESOS");
+      const iGastos = find("GASTOS");
+      const iUtilidad = find("UTILIDAD");
+
+      if (iCentro < 0 || iIngresos < 0 || iGastos < 0) {
+        throw new Error("CSV sin columnas mínimas: Periodo, Centro, Ingresos y Gastos.");
+      }
+
+      const fallbackPeriod = extractPeriodFromWorkbook({}, fileName);
+      const parsed = rowsCsv.map(row => ({
+        periodo: iPeriodo >= 0 ? row[iPeriodo] : fallbackPeriod,
+        centro: row[iCentro],
+        ingresos: toNumber(row[iIngresos]),
+        gastos: toNumber(row[iGastos]),
+        utilidad: iUtilidad >= 0 ? toNumber(row[iUtilidad]) : undefined
+      }));
+      return normalizeRows(parsed, fallbackPeriod);
+    }
+
+    function splitCSVLine(line) {
+      const result = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+        if (char === '"' && inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if ((char === ";" || char === ",") && !inQuotes) {
+          result.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result;
+    }
+
+    function canvasSetup(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    function drawText(ctx, text, x, y, options = {}) {
+      ctx.save();
+      ctx.fillStyle = options.color || "#0f172a";
+      ctx.font = `${options.weight || 700} ${options.size || 12}px Inter, Arial`;
+      ctx.textAlign = options.align || "left";
+      ctx.textBaseline = options.baseline || "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function roundedRect(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function drawNoData(ctx, width, height) {
+      drawText(ctx, "Sin datos para graficar", width / 2, height / 2, { align: "center", color: "#64748b", size: 15 });
+    }
+
+    function drawGrid(ctx, x, y, w, h, steps = 4) {
+      ctx.save();
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= steps; i++) {
+        const yy = y + (h / steps) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, yy);
+        ctx.lineTo(x + w, yy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawBarChart(data) {
+      const canvas = $("barChart");
+      const { ctx, width, height } = canvasSetup(canvas);
+      if (!data.length) return drawNoData(ctx, width, height);
+
+      const margin = { top: 26, right: 24, bottom: 44, left: 148 };
+      const chartW = width - margin.left - margin.right;
+      const chartH = height - margin.top - margin.bottom;
+      const maxVal = Math.max(1, ...data.flatMap(d => [d.ingresos, d.gastos]));
+      const rowH = chartH / data.length;
+      drawGrid(ctx, margin.left, margin.top, chartW, chartH, 4);
+
+      data.forEach((d, i) => {
+        const y = margin.top + i * rowH + rowH * .18;
+        const h = Math.min(15, rowH * .28);
+        const w1 = chartW * d.ingresos / maxVal;
+        const w2 = chartW * d.gastos / maxVal;
+
+        drawText(ctx, truncate(d.centro, 20), margin.left - 12, y + h + 5, { align: "right", color: "#475569", size: 11 });
+
+        ctx.fillStyle = "#0f766e";
+        roundedRect(ctx, margin.left, y, w1, h, 6);
+        ctx.fill();
+
+        ctx.fillStyle = "#94a3b8";
+        roundedRect(ctx, margin.left, y + h + 5, w2, h, 6);
+        ctx.fill();
+
+        if (w1 > 55) drawText(ctx, fmtMoney(d.ingresos), margin.left + w1 - 6, y + h / 2, { align: "right", color: "white", size: 10, weight: 900 });
+        if (w2 > 55) drawText(ctx, fmtMoney(d.gastos), margin.left + w2 - 6, y + h + 5 + h / 2, { align: "right", color: "white", size: 10, weight: 900 });
+      });
+
+      drawText(ctx, "Ingresos", margin.left, 13, { color: "#0f766e", size: 12 });
+      drawText(ctx, "Gastos", margin.left + 90, 13, { color: "#64748b", size: 12 });
+    }
+
+    function drawDonutChart(data) {
+      const canvas = $("donutChart");
+      const { ctx, width, height } = canvasSetup(canvas);
+      const positive = data.filter(d => d.ingresos > 0);
+      const total = sum(positive, "ingresos");
+      if (!positive.length || !total) return drawNoData(ctx, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2 - 20;
+      const radius = Math.min(width, height) * .28;
+      let start = -Math.PI / 2;
+
+      positive.forEach((d, i) => {
+        const angle = d.ingresos / total * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.fillStyle = PALETTE[i % PALETTE.length];
+        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.closePath();
+        ctx.fill();
+        start += angle;
+      });
+
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * .58, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+
+      drawText(ctx, "Ingresos", cx, cy - 8, { align: "center", color: "#64748b", size: 12 });
+      drawText(ctx, fmtMoney(total), cx, cy + 13, { align: "center", color: "#0f172a", size: 16, weight: 900 });
+
+      const legendY = height - 72;
+      positive.slice(0, 6).forEach((d, i) => {
+        const x = 16 + (i % 2) * (width / 2 - 12);
+        const y = legendY + Math.floor(i / 2) * 22;
+        ctx.fillStyle = PALETTE[i % PALETTE.length];
+        ctx.beginPath();
+        ctx.arc(x + 6, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        drawText(ctx, `${truncate(d.centro, 16)} ${Math.round(d.ingresos / total * 100)}%`, x + 18, y, { color: "#475569", size: 11, weight: 700 });
+      });
+    }
+
+    function drawUtilityChart(data) {
+      const canvas = $("utilityChart");
+      const { ctx, width, height } = canvasSetup(canvas);
+      const metric = $("rankingMetric").value;
+      const sorted = [...data].sort((a,b) => b[metric] - a[metric]);
+      if (!sorted.length) return drawNoData(ctx, width, height);
+
+      const margin = { top: 22, right: 85, bottom: 34, left: 148 };
+      const chartW = width - margin.left - margin.right;
+      const chartH = height - margin.top - margin.bottom;
+      const rowH = chartH / sorted.length;
+      const minVal = Math.min(0, ...sorted.map(d => d[metric]));
+      const maxVal = Math.max(0, ...sorted.map(d => d[metric]));
+      const span = maxVal - minVal || 1;
+      const zeroX = margin.left + ((0 - minVal) / span) * chartW;
+
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.beginPath();
+      ctx.moveTo(zeroX, margin.top - 4);
+      ctx.lineTo(zeroX, margin.top + chartH + 4);
+      ctx.stroke();
+
+      sorted.forEach((d, i) => {
+        const value = d[metric];
+        const y = margin.top + i * rowH + rowH * .22;
+        const h = Math.min(22, rowH * .52);
+        const x = value >= 0 ? zeroX : zeroX + (value / span) * chartW;
+        const w = Math.abs(value / span) * chartW;
+
+        drawText(ctx, truncate(d.centro, 20), margin.left - 12, y + h / 2, { align: "right", color: "#475569", size: 11 });
+
+        ctx.fillStyle = value >= 0 ? "#087c3a" : "#dc2626";
+        roundedRect(ctx, x, y, w, h, 7);
+        ctx.fill();
+
+        const label = metric === "margen" ? fmtPct(value) : fmtMoney(value);
+        drawText(ctx, label, value >= 0 ? x + w + 7 : x - 7, y + h / 2, {
+          align: value >= 0 ? "left" : "right",
+          color: value >= 0 ? "#166534" : "#991b1b",
+          size: 11,
+          weight: 900
+        });
+      });
+    }
+
+    function drawTrendChart() {
+      const canvas = $("trendChart");
+      const { ctx, width, height } = canvasSetup(canvas);
+      const period = $("periodFilter").value;
+      const center = $("centerFilter").value;
+
+      let trendBase = rows;
+      if (center !== "Todos") trendBase = trendBase.filter(r => r.centro === center);
+
+      const grouped = Object.entries(groupBy(trendBase, "periodo"))
+        .map(([p, items]) => {
+          const ing = sum(items, "ingresos");
+          const gas = sum(items, "gastos");
+          return { periodo: p, ingresos: ing, gastos: gas, utilidad: ing - gas, margen: ing ? (ing - gas) / ing : 0 };
+        })
+        .sort((a,b) => periodSort(a.periodo, b.periodo));
+
+      if (!grouped.length) return drawNoData(ctx, width, height);
+
+      const margin = { top: 26, right: 28, bottom: 50, left: 58 };
+      const chartW = width - margin.left - margin.right;
+      const chartH = height - margin.top - margin.bottom;
+      drawGrid(ctx, margin.left, margin.top, chartW, chartH, 4);
+
+      const minY = Math.min(0, ...grouped.map(d => d.margen));
+      const maxY = Math.max(.1, ...grouped.map(d => d.margen));
+      const span = maxY - minY || 1;
+
+      const pts = grouped.map((d, i) => ({
+        ...d,
+        x: margin.left + (grouped.length === 1 ? chartW / 2 : i * chartW / (grouped.length - 1)),
+        y: margin.top + chartH - ((d.margen - minY) / span) * chartH
+      }));
+
+      ctx.strokeStyle = "#0284c7";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.stroke();
+
+      pts.forEach(p => {
+        ctx.fillStyle = "#0284c7";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        drawText(ctx, fmtPct(p.margen), p.x, p.y - 17, { align: "center", color: "#075985", size: 11, weight: 900 });
+        drawText(ctx, truncate(p.periodo, 10), p.x, margin.top + chartH + 24, { align: "center", color: "#64748b", size: 10 });
+      });
+
+      for (let i = 0; i <= 4; i++) {
+        const value = minY + span * i / 4;
+        const y = margin.top + chartH - chartH * i / 4;
+        drawText(ctx, fmtPct(value), margin.left - 10, y, { align: "right", color: "#64748b", size: 10, weight: 600 });
+      }
+
+      if (period !== "Todos") {
+        drawText(ctx, "La tendencia usa todos los periodos cargados.", width / 2, 14, { align: "center", color: "#64748b", size: 11 });
+      }
+    }
+
+    function truncate(text, max) {
+      const s = String(text ?? "");
+      return s.length > max ? s.slice(0, max - 1) + "…" : s;
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 4200);
+    }
+
+    function boot() {
+      populateFilters();
+      setupUpload();
+
+      $("periodFilter").addEventListener("change", updateDashboard);
+      $("centerFilter").addEventListener("change", updateDashboard);
+      COMPARISON_FILTERS.forEach(id => $(id).addEventListener("change", renderComparison));
+      $("rankingMetric").addEventListener("change", updateDashboard);
+      $("refreshBtn").addEventListener("click", updateDashboard);
+      $("exportBtn").addEventListener("click", exportCSV);
+      $("resetStorageBtn").addEventListener("click", resetStorage);
+      $("periodRecords").addEventListener("click", event => {
+        const button = event.target.closest("button[data-period]");
+        if (button) deletePeriod(button.dataset.period);
+      });
+      window.addEventListener("resize", debounce(updateDashboard, 150));
+      updateDashboard();
+    }
+
+    function debounce(fn, wait) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+      };
+    }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+    else boot();
+  </script>
+</body>
+</html>
