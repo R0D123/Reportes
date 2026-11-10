@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard DTS | Carga Excel</title>
+  <title>Dashboard DTS | Excel y nube</title>
+  <meta name="description" content="Dashboard DTS de ingresos, gastos, utilidad y margen, con carga Excel y respaldo privado en la nube." />
+  <script src="./config.js"></script>
   <style>
     :root {
       --bg: #eef4f8;
@@ -527,6 +529,30 @@
 
     .toast.show { display: block; }
 
+    .cloud-panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .cloud-panel h3 { margin: 0 0 8px; font-size: 17px; }
+    .cloud-panel p { color: var(--muted); margin: 6px 0 12px; font-size: 13px; line-height: 1.45; }
+    .cloud-panel .auth-grid { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto auto; gap: 10px; align-items: end; }
+    .cloud-panel input { background: white; color: var(--ink); border: 1px solid var(--line); }
+    .cloud-panel label { color: #475569; }
+    .cloud-panel button { width: auto; min-width: 118px; }
+    .cloud-panel .cloud-user { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .cloud-panel .cloud-user button { background: #e2e8f0; color: var(--ink); border-color: var(--line); }
+    .storage-note { margin-top: 12px; font-size: 12px; line-height: 1.45; color: #a8c4d3; }
+    .record-item { grid-template-columns: minmax(0, 1fr) auto auto; }
+    .record-item .download-record { background: rgba(47,167,212,.16); color: #bae6fd; }
+    .record-item .filename { display: block; margin-top: 4px; font-size: 11px; overflow-wrap: anywhere; color: #a8c4d3; }
+    [hidden] { display: none !important; }
+    @media (max-width: 1000px) { .cloud-panel .auth-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 620px) { .cloud-panel .auth-grid { grid-template-columns: 1fr; } .cloud-panel button { width: 100%; } }
+
     @media (max-width: 1180px) {
       .layout {
         grid-template-columns: 1fr;
@@ -620,6 +646,7 @@
         <button class="btn-primary" id="refreshBtn">Actualizar dashboard</button>
         <button class="btn-secondary" id="exportBtn">Exportar CSV filtrado</button>
         <button class="btn-secondary" id="resetStorageBtn">Borrar cargas guardadas</button>
+        <button class="btn-secondary" id="backupBtn">Exportar respaldo JSON</button>
       </div>
 
       <div class="side-section" style="margin-top: 22px;">
@@ -627,8 +654,8 @@
         <div id="periodRecords" class="records"></div>
       </div>
 
-      <p class="small-note">
-        Los archivos cargados se guardan en este navegador mediante almacenamiento local. No necesitas servidor ni base de datos para usar esta versión.
+      <p id="storageSideNote" class="small-note">
+        Modo local: se conservan los datos procesados en este navegador. Para guardar los Excel originales en la nube, configura Supabase.
       </p>
     </aside>
 
@@ -644,6 +671,21 @@
         <div class="period-badge"><span class="dot"></span><span id="periodBadge">Periodo actual</span></div>
       </section>
 
+      <section class="cloud-panel" aria-label="Almacenamiento y acceso">
+        <h3 id="storageTitle">Estado del almacenamiento</h3>
+        <p id="storageStatus" role="status">Inicializando...</p>
+        <form id="authForm" class="auth-grid" hidden>
+          <div><label for="authEmail">Correo electrónico</label><input id="authEmail" type="email" autocomplete="username" placeholder="usuario@empresa.cl" required /></div>
+          <div><label for="authPassword">Contraseña</label><input id="authPassword" type="password" minlength="8" autocomplete="current-password" placeholder="Mínimo 8 caracteres" required /></div>
+          <button class="btn-primary" type="submit" id="loginBtn">Ingresar</button>
+          <button class="btn-secondary" type="button" id="signupBtn" style="background:#e2e8f0;color:#0f172a;border-color:#cbd5e1;">Crear cuenta</button>
+        </form>
+        <div class="cloud-user" id="loggedUser" hidden>
+          <strong id="userEmail"></strong>
+          <button type="button" id="logoutBtn">Cerrar sesión</button>
+        </div>
+      </section>
+
       <section class="upload-panel">
         <div class="upload-grid">
           <div id="dropzone" class="dropzone">
@@ -655,6 +697,7 @@
                 <input id="fileInput" type="file" multiple accept=".xlsx,.xls,.csv" />
               </label>
               <div id="xlsxStatus" class="library-status"></div>
+              <p id="uploadProgress" class="library-status" role="status"></p>
             </div>
           </div>
 
@@ -733,7 +776,7 @@
             <tbody id="comparisonBody"></tbody>
           </table>
         </div>
-        <p id="compareCoverage" role="status">Abre el HTML descargado en tu navegador para usar los filtros.</p>
+        <p id="compareCoverage" role="status">Carga tus archivos Excel para habilitar el comparativo.</p>
       </section>
 
       <section class="mini-kpis">
@@ -841,90 +884,24 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const DEFAULT_ROWS = [
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Arriendo Oficina",
-    "ingresos": 4696634,
-    "gastos": 394575,
-    "utilidad": 4302059,
-    "margen": 0.9159877052374105,
-    "estado": "Rentable",
-    "partIngresos": 0.04069229635494675,
-    "partGastos": 0.004987318629299416,
-    "activo": 1,
-    "semaforo": "Verde"
-  },
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Gasto Fuera Sociedad",
-    "ingresos": 0,
-    "gastos": 55958,
-    "utilidad": -55958,
-    "margen": 0,
-    "estado": "Déficit",
-    "partIngresos": 0,
-    "partGastos": 0.0007072936092209003,
-    "activo": 1,
-    "semaforo": "Amarillo"
-  },
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Lavado",
-    "ingresos": 77943639,
-    "gastos": 43870501,
-    "utilidad": 34073138,
-    "margen": 0.4371509777725415,
-    "estado": "Rentable",
-    "partIngresos": 0.6753146311104901,
-    "partGastos": 0.554510972347459,
-    "activo": 1,
-    "semaforo": "Verde"
-  },
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Mecanica Base Concon",
-    "ingresos": 21860035,
-    "gastos": 27040135,
-    "utilidad": -5180100,
-    "margen": -0.23696668372214408,
-    "estado": "Déficit",
-    "partIngresos": 0.18939841225641776,
-    "partGastos": 0.34177981125076645,
-    "activo": 1,
-    "semaforo": "Rojo"
-  },
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Mecanica Base Coronel",
-    "ingresos": 10917951,
-    "gastos": 7754490,
-    "utilidad": 3163461,
-    "margen": 0.28974859843206846,
-    "estado": "Rentable",
-    "partIngresos": 0.09459466027814542,
-    "partGastos": 0.09801460416325421,
-    "activo": 1,
-    "semaforo": "Verde"
-  },
-  {
-    "periodo": "Marzo 2026",
-    "centro": "Bed Slide",
-    "ingresos": 0,
-    "gastos": 0,
-    "utilidad": 0,
-    "margen": 0,
-    "estado": "Neutro",
-    "partIngresos": 0,
-    "partGastos": 0,
-    "activo": 0,
-    "semaforo": "Amarillo"
-  }
-];
-    const STORAGE_KEY = "dts_dashboard_excel_v2";
+    // No se publica información financiera de ejemplo en GitHub.
+    const DEFAULT_ROWS = [];
+    const STORAGE_KEY = "dts_dashboard_local_v3";
+    const LEGACY_STORAGE_KEY = "dts_dashboard_excel_v2";
+    const CONFIG = window.DTS_CONFIG || {};
+    const CLOUD_ENABLED = Boolean(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_PUBLISHABLE_KEY);
+    const MAX_FILE_MB = Number(CONFIG.MAX_FILE_MB) || 15;
+    const BUCKET = "dts-excels";
+    let cloudClient = null;
+    let currentUser = null;
+    let cloudRecords = new Map();
+    let cloudBusy = false;
+    let authRunId = 0;
+    let lastWarnings = [];
+
     let xlsxLoadPromise = null;
 
-    let rows = loadStoredRows();
+    let rows = CLOUD_ENABLED ? [] : loadStoredRows();
     let filteredRows = [];
 
     const MONTHS = [
@@ -946,10 +923,10 @@
 
     function loadStoredRows() {
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-        if (Array.isArray(saved) && saved.length) return saved;
-      } catch (e) {}
-      return structuredClone(DEFAULT_ROWS);
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null");
+        if (Array.isArray(saved)) return saved;
+      } catch (e) { console.warn("Datos locales ilegibles", e); }
+      return [];
     }
 
     function saveRows() {
@@ -976,19 +953,23 @@
 
     function toNumber(value) {
       if (value === null || value === undefined || value === "") return 0;
-      if (typeof value === "number" && isFinite(value)) return value;
-      let s = String(value)
-        .replace(/\s/g, "")
-        .replace(/CLP/gi, "")
-        .replace(/\$/g, "")
-        .replace(/%/g, "");
-      if (s.includes(",") && s.includes(".")) {
-        s = s.replace(/\./g, "").replace(",", ".");
-      } else if (s.includes(",")) {
-        s = s.replace(",", ".");
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      let s = String(value).trim().replace(/\s/g, "").replace(/CLP/gi, "")
+        .replace(/\$/g, "").replace(/%/g, "");
+      const accountingNegative = /^\(.*\)$/.test(s);
+      if (accountingNegative) s = s.slice(1, -1);
+      const comma = s.lastIndexOf(","), dot = s.lastIndexOf(".");
+      if (comma !== -1 && dot !== -1) {
+        // Último separador se interpreta como decimal: "1.234,56" o "1,234.56".
+        const decimal = comma > dot ? "," : ".";
+        s = s.replace(decimal === "," ? /\./g : /,/g, "").replace(decimal, ".");
+      } else if (comma !== -1) {
+        s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".");
+      } else if (dot !== -1 && /^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+        s = s.replace(/\./g, "");
       }
       const n = Number(s);
-      return isFinite(n) ? n : 0;
+      return Number.isFinite(n) ? (accountingNegative ? -n : n) : 0;
     }
 
     function toPercent(value) {
@@ -1087,7 +1068,8 @@
         .map(row => {
           const ingresos = toNumber(row.ingresos);
           const gastos = toNumber(row.gastos);
-          const utilidad = row.utilidad === undefined || row.utilidad === null ? ingresos - gastos : toNumber(row.utilidad);
+          // Los indicadores siempre se recalculan a partir de ingresos y gastos.
+          const utilidad = ingresos - gastos;
           const margen = ingresos ? utilidad / ingresos : 0;
           const estado = utilidad > 0 ? "Rentable" : utilidad < 0 ? "Déficit" : "Neutro";
           const semaforo = utilidad < 0 ? "Rojo" : margen >= 0.10 ? "Verde" : "Amarillo";
@@ -1127,16 +1109,16 @@
       const { ingresos, gastos, utilidad, margen: ratio } = calcTotals(data);
       const margen = ratio ?? 0;
       const centros = unique(data.map(r => r.centro)).length;
-      const rentables = unique(data.filter(r => r.utilidad > 0).map(r => r.centro)).length;
-      const deficit = unique(data.filter(r => r.utilidad < 0).map(r => r.centro)).length;
-      const pctRentables = centros ? rentables / centros : 0;
-      const cobertura = gastos ? ingresos / gastos : 0;
-      const estadoGeneral = margen >= 0.10 ? "Fuerte" : margen >= 0 ? "Ajustado" : "En riesgo";
-
       const byCenter = Object.entries(groupBy(data, "centro")).map(([centro, items]) => {
         const totals = calcTotals(items);
         return { centro, ...totals, margen: totals.margen ?? 0 };
       });
+      // Un centro con varios meses se cuenta una sola vez, según su utilidad agregada.
+      const rentables = byCenter.filter(r => r.utilidad > 0).length;
+      const deficit = byCenter.filter(r => r.utilidad < 0).length;
+      const pctRentables = centros ? rentables / centros : 0;
+      const cobertura = gastos ? ingresos / gastos : 0;
+      const estadoGeneral = !data.length ? "Sin datos" : margen >= 0.10 ? "Fuerte" : margen >= 0 ? "Ajustado" : "En riesgo";
 
       const best = byCenter.length ? [...byCenter].sort((a,b) => b.utilidad - a.utilidad)[0] : null;
       const worst = byCenter.length ? [...byCenter].sort((a,b) => a.utilidad - b.utilidad)[0] : null;
@@ -1299,6 +1281,9 @@
 
     function renderTable(data) {
       $("tableCount").textContent = `${data.length} registros`;
+      // La participación corresponde a la selección visible (mes/centro).
+      const totalIngresos = sum(data, "ingresos");
+      const totalGastos = sum(data, "gastos");
       $("tableBody").innerHTML = data.map(row => {
         const tagClass = row.utilidad < 0 ? "bad" : row.utilidad === 0 ? "warn" : "ok";
         return `
@@ -1309,8 +1294,8 @@
             <td>${fmtMoney(row.gastos)}</td>
             <td>${fmtMoney(row.utilidad)}</td>
             <td>${fmtPct(row.margen)}</td>
-            <td>${fmtPct(row.partIngresos)}</td>
-            <td>${fmtPct(row.partGastos)}</td>
+            <td>${fmtPct(totalIngresos ? row.ingresos / totalIngresos : 0)}</td>
+            <td>${fmtPct(totalGastos ? row.gastos / totalGastos : 0)}</td>
             <td><span class="tag ${tagClass}">${escapeHtml(row.estado)}</span></td>
             <td>${semaphoreIcon(row.semaforo)} ${escapeHtml(row.semaforo)}</td>
           </tr>
@@ -1329,32 +1314,77 @@
       const periods = getPeriods().sort(periodSort);
       $("periodRecords").innerHTML = periods.map(period => {
         const count = rows.filter(r => r.periodo === period).length;
-        return `
-          <div class="record-item">
-            <span>${escapeHtml(period)} · ${count} centros</span>
-            <button type="button" data-period="${escapeAttr(period)}">Eliminar</button>
-          </div>
-        `;
+        const file = cloudRecords.get(period);
+        return `<div class="record-item">
+          <span>${escapeHtml(period)} · ${count} centros${file ? `<span class="filename">${escapeHtml(file.source_filename)}</span>` : ""}</span>
+          ${file ? `<button type="button" class="download-record" data-download="${escapeAttr(period)}" title="Descargar archivo Excel guardado">Excel</button>` : "<span></span>"}
+          <button type="button" data-period="${escapeAttr(period)}">Eliminar</button>
+        </div>`;
       }).join("") || `<div class="small-note">No hay cargas guardadas.</div>`;
     }
 
-    function deletePeriod(period) {
+    async function deletePeriod(period) {
       if (!confirm(`¿Eliminar el periodo "${period}" del histórico?`)) return;
-      rows = rows.filter(r => r.periodo !== period);
-      if (!rows.length) rows = structuredClone(DEFAULT_ROWS);
-      const saved = saveRows();
-      populateFilters();
-      updateDashboard();
-      showToast(saved ? "Periodo eliminado." : "Periodo eliminado de esta sesión.");
+      if (CLOUD_ENABLED) {
+        if (!currentUser || cloudBusy) return showToast("Debes iniciar sesión en la nube.");
+        setCloudBusy(true);
+        try {
+          const record = cloudRecords.get(period);
+          const { error } = await cloudClient.from("dts_imports").delete().eq("period", period);
+          if (error) throw error;
+          cloudRecords.delete(period);
+          await deleteUnreferencedFile(record?.storage_path);
+          await loadCloudRows();
+          showToast("Periodo eliminado de la nube.");
+        } catch (error) { showToast("No se pudo eliminar: " + error.message); }
+        finally { setCloudBusy(false); }
+      } else {
+        rows = rows.filter(r => r.periodo !== period);
+        const saved = saveRows();
+        populateFilters(); updateDashboard();
+        showToast(saved ? "Periodo eliminado localmente." : "Periodo eliminado solo de esta sesión.");
+      }
     }
 
-    function resetStorage() {
-      if (!confirm("¿Borrar todas las cargas guardadas y volver a los datos iniciales?")) return;
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      rows = structuredClone(DEFAULT_ROWS);
-      populateFilters();
-      updateDashboard();
-      showToast("Se restauraron los datos iniciales.");
+    async function resetStorage() {
+      const message = CLOUD_ENABLED
+        ? "¿Eliminar TODOS tus periodos y archivos Excel originales de la nube? Esta acción no se puede deshacer."
+        : "¿Borrar todos los registros locales de este navegador?";
+      if (!confirm(message)) return;
+      if (CLOUD_ENABLED) {
+        if (!currentUser || cloudBusy) return showToast("Debes iniciar sesión.");
+        setCloudBusy(true);
+        try {
+          const paths = [...new Set([...cloudRecords.values()].map(x => x.storage_path).filter(Boolean))];
+          const { error } = await cloudClient.from("dts_imports").delete().eq("user_id", currentUser.id);
+          if (error) throw error;
+          cloudRecords.clear();
+          if (paths.length) {
+            const { error: storageError } = await cloudClient.storage.from(BUCKET).remove(paths);
+            if (storageError) showToast("Los datos se eliminaron, pero verifica los archivos en Storage.");
+          }
+          await loadCloudRows();
+          showToast("Se eliminaron los registros de la nube.");
+        } catch (error) { showToast("No se pudo borrar: " + error.message); }
+        finally { setCloudBusy(false); }
+      } else {
+        try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); } catch {}
+        rows = []; populateFilters(); updateDashboard(); showToast("Se borraron los datos locales.");
+      }
+    }
+
+    function exportJSON() {
+      const payload = { version: 3, empresa: "DTS", fecha: new Date().toISOString(),
+        modo: CLOUD_ENABLED ? "nube" : "local", registros: rows };
+      downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
+        "respaldo_dts_" + new Date().toISOString().slice(0, 10) + ".json");
+    }
+
+    function downloadBlob(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
 
     function exportCSV() {
@@ -1367,13 +1397,7 @@
       ])];
 
       const csv = lines.map(line => line.map(value => `"${String(value).replace(/"/g, '""')}"`).join(";")).join("\n");
-      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "dashboard_dts_filtrado.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" }), "dashboard_dts_filtrado.csv");
     }
 
     function escapeHtml(value) {
@@ -1384,6 +1408,199 @@
 
     function escapeAttr(value) {
       return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+    function setCloudBusy(isBusy) {
+      cloudBusy = isBusy;
+      $("fileInput").disabled = isBusy || (CLOUD_ENABLED && !currentUser);
+      $("loginBtn").disabled = isBusy;
+      $("signupBtn").disabled = isBusy;
+      $("refreshBtn").disabled = isBusy;
+      $("resetStorageBtn").disabled = isBusy;
+    }
+
+    function setStorageStatus(message) { $("storageStatus").textContent = message; }
+
+    async function loadCloudSDK() {
+      if (window.supabase?.createClient) return;
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("No se pudo cargar la librería de Supabase. Verifica internet."));
+        document.head.appendChild(script);
+      });
+      if (!window.supabase?.createClient) throw new Error("El SDK de Supabase no está disponible.");
+    }
+
+    async function initializeCloud() {
+      if (!CLOUD_ENABLED) {
+        $("storageTitle").textContent = "Modo local — sin nube";
+        setStorageStatus("Los datos procesados se guardan únicamente en este navegador. Los Excel originales NO se conservan ni se comparten entre dispositivos.");
+        $("storageSideNote").textContent = "MODO LOCAL · Para sincronizar entre equipos y conservar los Excel originales, completa config.js y configura Supabase.";
+        return;
+      }
+      $("storageTitle").textContent = "Acceso privado · DTS en la nube";
+      $("storageSideNote").textContent = "MODO NUBE · Archivos Excel originales en Supabase Storage privado y datos del dashboard en PostgreSQL con acceso por usuario.";
+      $("fileInput").disabled = true;
+      $("authForm").hidden = false;
+      setStorageStatus("Conectando con el servicio de almacenamiento...");
+      try {
+        await loadCloudSDK();
+        cloudClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_PUBLISHABLE_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        cloudClient.auth.onAuthStateChange((_event, session) => {
+          // Diferir las consultas para no ejecutarlas dentro del callback de Auth.
+          setTimeout(() => applyAuthSession(session), 0);
+        });
+        const { data, error } = await cloudClient.auth.getUser();
+        if (error && error.name !== "AuthSessionMissingError") console.warn(error);
+        await applyAuthSession(data?.user ? { user: data.user } : null);
+      } catch (error) {
+        $("authForm").hidden = true;
+        setStorageStatus("ERROR DE CONEXIÓN: " + error.message + ". No se han guardado archivos.");
+        showToast("Error de conexión con Supabase.");
+      }
+    }
+
+    async function applyAuthSession(session) {
+      const run = ++authRunId;
+      const user = session?.user || null;
+      if (!user) {
+        currentUser = null;
+        rows = []; cloudRecords.clear();
+        $("loggedUser").hidden = true;
+        $("authForm").hidden = false;
+        setStorageStatus("Inicia sesión para ver tu histórico y guardar Excel originales privados.");
+        $("fileInput").disabled = true;
+        populateFilters(); updateDashboard();
+        return;
+      }
+      if (currentUser?.id === user.id && cloudRecords.size) return;
+      currentUser = user;
+      $("loggedUser").hidden = false;
+      $("authForm").hidden = true;
+      $("userEmail").textContent = user.email || "Sesión iniciada";
+      setStorageStatus("Sesión abierta. Recuperando Excel y registros guardados...");
+      try {
+        await loadCloudRows();
+        if (run !== authRunId) return;
+        setStorageStatus("Sincronizado con la nube. Tus periodos se conservan al cerrar el navegador o entrar desde otro dispositivo con esta cuenta.");
+        $("fileInput").disabled = false;
+      } catch (error) {
+        if (run !== authRunId) return;
+        setStorageStatus("La sesión está activa, pero no se pudo recuperar el histórico: " + error.message + ". Verifica haber ejecutado supabase.sql.");
+        $("fileInput").disabled = true;
+      }
+    }
+
+    async function login(event) {
+      event.preventDefault();
+      if (!cloudClient) return showToast("Sin conexión con Supabase.");
+      setCloudBusy(true);
+      try {
+        const { error } = await cloudClient.auth.signInWithPassword({
+          email: $("authEmail").value.trim(), password: $("authPassword").value
+        });
+        if (error) throw error;
+        $("authPassword").value = "";
+        setStorageStatus("Inicio de sesión exitoso. Cargando registros...");
+      } catch (error) { showToast("No se pudo ingresar: " + error.message); }
+      finally { setCloudBusy(false); }
+    }
+
+    async function signup() {
+      if (!$("authForm").reportValidity()) return;
+      if (!cloudClient) return showToast("Sin conexión con Supabase.");
+      setCloudBusy(true);
+      try {
+        const { data, error } = await cloudClient.auth.signUp({
+          email: $("authEmail").value.trim(), password: $("authPassword").value,
+          options: { emailRedirectTo: location.origin + location.pathname }
+        });
+        if (error) throw error;
+        $("authPassword").value = "";
+        showToast(data.session ? "Cuenta creada e iniciada." : "Cuenta creada. Revisa tu correo para confirmar el acceso (si está habilitado).");
+      } catch (error) { showToast("No se pudo crear la cuenta: " + error.message); }
+      finally { setCloudBusy(false); }
+    }
+
+    async function logout() {
+      if (!cloudClient) return;
+      const { error } = await cloudClient.auth.signOut();
+      if (error) return showToast(error.message);
+      await applyAuthSession(null);
+      showToast("Sesión cerrada.");
+    }
+
+    async function loadCloudRows() {
+      if (!currentUser) return;
+      // Cargar paginado para no truncar históricos mayores de 1000 periodos.
+      const list = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await cloudClient.from("dts_imports")
+          .select("period, rows, source_filename, storage_path, updated_at")
+          .order("period", { ascending: true }).range(from, from + 499);
+        if (error) throw error;
+        list.push(...(data || []));
+        if (!data || data.length < 500) break;
+        from += 500;
+      }
+      cloudRecords = new Map(list.map(item => [item.period, item]));
+      rows = list.flatMap(item => Array.isArray(item.rows)
+        ? normalizeRows(item.rows.map(r => ({...r, periodo: item.period})), item.period)
+        : []);
+      populateFilters(); updateDashboard();
+    }
+
+    async function saveCloudFile(file, parsed) {
+      if (!currentUser) throw new Error("Debes iniciar sesión");
+      const ext = file.name.split(".").pop().toLowerCase();
+      const path = `${currentUser.id}/${crypto.randomUUID()}.${ext}`;
+      const contentTypes = { xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        xls: "application/vnd.ms-excel", csv: "text/csv" };
+      const { error: uploadError } = await cloudClient.storage.from(BUCKET)
+        .upload(path, file, { upsert: false, cacheControl: "3600", contentType: contentTypes[ext] });
+      if (uploadError) throw new Error("No se pudo subir el archivo original: " + uploadError.message);
+      const groups = groupBy(parsed, "periodo");
+      const keys = Object.keys(groups);
+      const oldPaths = new Set();
+      const records = keys.map(p => {
+        const period = monthInfo(p)?.label || p;
+        const old = cloudRecords.get(period);
+        if (old?.storage_path) oldPaths.add(old.storage_path);
+        return { user_id: currentUser.id, period, source_filename: file.name, storage_path: path,
+          updated_at: new Date().toISOString(), rows: normalizeRows(groups[p], period) };
+      });
+      const { error: dbError } = await cloudClient.from("dts_imports")
+        .upsert(records, { onConflict: "user_id,period" });
+      if (dbError) {
+        await cloudClient.storage.from(BUCKET).remove([path]);
+        throw new Error("No se pudieron guardar los datos: " + dbError.message);
+      }
+      // Solo borrar originales antiguos si ningún otro periodo los necesita.
+      records.forEach(record => cloudRecords.set(record.period, record));
+      for (const oldPath of oldPaths) await deleteUnreferencedFile(oldPath);
+    }
+
+    async function deleteUnreferencedFile(path) {
+      if (!path) return;
+      if ([...cloudRecords.values()].some(x => x.storage_path === path)) return;
+      const { error } = await cloudClient.storage.from(BUCKET).remove([path]);
+      if (error) console.warn("No se pudo limpiar un Excel antiguo:", error.message);
+    }
+
+    async function downloadSource(period) {
+      if (!CLOUD_ENABLED || !currentUser) return showToast("Inicia sesión para descargar el Excel.");
+      const record = cloudRecords.get(period);
+      if (!record) return showToast("No se encontró un original asociado a este periodo.");
+      try {
+        const { data, error } = await cloudClient.storage.from(BUCKET).download(record.storage_path);
+        if (error) throw error;
+        downloadBlob(data, record.source_filename || "documento_excel.xlsx");
+      } catch (error) { showToast("No se pudo descargar: " + error.message); }
     }
 
     function setupUpload() {
@@ -1452,37 +1669,63 @@
 
     async function handleFiles(files) {
       if (!files.length) return;
-      const imported = [];
-      const errors = [];
-
-      for (const file of files) {
-        try {
-          const parsed = await parseFile(file);
-          imported.push(...parsed);
-        } catch (error) {
-          console.error(error);
-          errors.push(`${file.name}: ${error.message}`);
+      if (cloudBusy) return showToast("Ya se está procesando otra carga.");
+      if (CLOUD_ENABLED && !currentUser) return showToast("Inicia sesión para subir y guardar los Excel en la nube.");
+      setCloudBusy(true);
+      const errors = [], warnings = [];
+      let imported = 0, finalPeriod = "";
+      try {
+        for (const file of files) {
+          try {
+            const ext = file.name.split(".").pop().toLowerCase();
+            if (!["xlsx", "xls", "csv"].includes(ext)) throw new Error("Extensión no admitida");
+            if (file.size > MAX_FILE_MB * 1024 * 1024) throw new Error(`Archivo supera ${MAX_FILE_MB} MB`);
+            $("uploadProgress").textContent = `Procesando ${file.name}...`;
+            const parsed = await parseFile(file);
+            if (!parsed.length) throw new Error("Sin registros válidos");
+            warnings.push(...(parsed.warnings || []).map(m => `${file.name}: ${m}`));
+            if (CLOUD_ENABLED) {
+              $("uploadProgress").textContent = `Guardando ${file.name} en la nube...`;
+              await saveCloudFile(file, parsed);
+            } else {
+              mergeRows(parsed);
+              if (!saveRows()) throw new Error("No se pudo guardar localmente: almacén del navegador lleno");
+            }
+            imported += parsed.length;
+            finalPeriod = parsed[parsed.length - 1]?.periodo || finalPeriod;
+          } catch (error) {
+            console.error(error);
+            errors.push(`${file.name}: ${error.message}`);
+          }
         }
-      }
+        if (CLOUD_ENABLED && imported) {
+          try { await loadCloudRows(); }
+          catch (error) { errors.push("Recarga de nube: " + error.message); }
+        } else if (imported) {
+          populateFilters(); updateDashboard();
+        }
+        if (finalPeriod && getPeriods().includes(finalPeriod)) {
+          $("periodFilter").value = finalPeriod;
+          $("centerFilter").value = "Todos";
+          updateDashboard();
+        }
+        if (imported) showToast(`${imported} registros importados${CLOUD_ENABLED ? " y respaldados en la nube" : " y guardados localmente"}.`);
+        if (warnings.length) {
+          lastWarnings = warnings;
+          $("uploadProgress").textContent = `AVISO DE CONCILIACIÓN: ${warnings.slice(0, 3).join(" | ")}${warnings.length > 3 ? ` (+${warnings.length - 3} más)` : ""}`;
+        } else if (!errors.length) $("uploadProgress").textContent = imported ? "Carga terminada correctamente." : "";
+        if (errors.length) {
+          $("uploadProgress").textContent = errors.slice(0, 3).join(" | ");
+          showToast("Errores al importar: " + errors.slice(0, 2).join(" | "));
+        }
+      } finally { setCloudBusy(false); }
+    }
 
-      if (imported.length) {
-        const periods = unique(imported.map(r => r.periodo));
-        const periodKey = value => monthInfo(value)?.label || value;
-        const keys = new Set(periods.map(periodKey));
-        rows = rows.filter(row => !keys.has(periodKey(row.periodo)));
-        rows = [...rows, ...imported];
-        const saved = saveRows();
-        populateFilters();
-        $("periodFilter").value = periods[periods.length - 1];
-        $("centerFilter").value = "Todos";
-        updateDashboard();
-        const location = saved ? "" : " Datos disponibles en esta sesión.";
-        showToast(`${imported.length} registros incorporados.${location}`);
-      }
-
-      if (errors.length) {
-        showToast("Algunos archivos no pudieron leerse: " + errors.join(" | "));
-      }
+    function mergeRows(parsed) {
+      const normalizePeriod = value => monthInfo(value)?.label || value;
+      const periods = new Set(parsed.map(r => normalizePeriod(r.periodo)));
+      rows = rows.filter(r => !periods.has(normalizePeriod(r.periodo)));
+      rows.push(...parsed.map(r => ({ ...r, periodo: normalizePeriod(r.periodo) })));
     }
 
     async function parseFile(file) {
@@ -1576,6 +1819,7 @@
       const cSemaforo = idx("SEMAFORO", 9);
 
       const parsed = [];
+      const warnings = [];
       for (let i = headerRowIndex + 1; i < matrix.length; i++) {
         const row = matrix[i] || [];
         const centro = String(row[cCentro] ?? "").trim();
@@ -1583,7 +1827,19 @@
         if (normalizeText(centro) === "TOTAL") break;
         const ingresos = toNumber(row[cIngresos]);
         const gastos = toNumber(row[cGastos]);
-        const utilidad = row[cUtilidad] === null || row[cUtilidad] === undefined ? ingresos - gastos : toNumber(row[cUtilidad]);
+        const utilidad = ingresos - gastos;
+        if (row[cUtilidad] !== null && row[cUtilidad] !== undefined && row[cUtilidad] !== "") {
+          const excelUtilidad = toNumber(row[cUtilidad]);
+          if (Math.abs(excelUtilidad - utilidad) > 1) {
+            warnings.push(`${centro}: utilidad Excel ${fmtMoney(excelUtilidad)} ≠ calculada ${fmtMoney(utilidad)}`);
+          }
+        }
+        if (row[cMargen] !== null && row[cMargen] !== undefined && row[cMargen] !== "" && ingresos !== 0) {
+          const excelMargen = toPercent(row[cMargen]);
+          if (Math.abs(excelMargen - utilidad / ingresos) > 0.005) {
+            warnings.push(`${centro}: margen Excel ${fmtPct(excelMargen)} ≠ calculado ${fmtPct(utilidad / ingresos)}`);
+          }
+        }
         parsed.push({
           periodo: period,
           centro,
@@ -1596,7 +1852,9 @@
           semaforo: row[cSemaforo] || ""
         });
       }
-      return normalizeRows(parsed, period);
+      const normalized = normalizeRows(parsed, period);
+      normalized.warnings = warnings;
+      return normalized;
     }
 
     function parseDatosOriginales(matrix, period) {
@@ -1642,7 +1900,9 @@
     }
 
     function parseCSV(text, fileName) {
-      const rowsCsv = text.trim().split(/\r?\n/).map(line => splitCSVLine(line));
+      const lines = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/);
+      const delimiter = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ";" : ",";
+      const rowsCsv = lines.map(line => splitCSVLine(line, delimiter));
       const headers = rowsCsv.shift().map(normalizeText);
       const find = (needle) => headers.findIndex(h => h.includes(needle));
 
@@ -1667,7 +1927,7 @@
       return normalizeRows(parsed, fallbackPeriod);
     }
 
-    function splitCSVLine(line) {
+    function splitCSVLine(line, delimiter = ";") {
       const result = [];
       let current = "";
       let inQuotes = false;
@@ -1679,7 +1939,7 @@
           i++;
         } else if (char === '"') {
           inQuotes = !inQuotes;
-        } else if ((char === ";" || char === ",") && !inQuotes) {
+        } else if (char === delimiter && !inQuotes) {
           result.push(current);
           current = "";
         } else {
@@ -1745,7 +2005,7 @@
       const { ctx, width, height } = canvasSetup(canvas);
       if (!data.length) return drawNoData(ctx, width, height);
 
-      const margin = { top: 26, right: 24, bottom: 44, left: 148 };
+      const margin = { top: 26, right: 16, bottom: 44, left: width < 460 ? 105 : 148 };
       const chartW = width - margin.left - margin.right;
       const chartH = height - margin.top - margin.bottom;
       const maxVal = Math.max(1, ...data.flatMap(d => [d.ingresos, d.gastos]));
@@ -1827,7 +2087,7 @@
       const sorted = [...data].sort((a,b) => b[metric] - a[metric]);
       if (!sorted.length) return drawNoData(ctx, width, height);
 
-      const margin = { top: 22, right: 85, bottom: 34, left: 148 };
+      const margin = { top: 22, right: width < 460 ? 70 : 85, bottom: 34, left: width < 460 ? 105 : 148 };
       const chartW = width - margin.left - margin.right;
       const chartH = height - margin.top - margin.bottom;
       const rowH = chartH / sorted.length;
@@ -1949,11 +2209,18 @@
       $("exportBtn").addEventListener("click", exportCSV);
       $("resetStorageBtn").addEventListener("click", resetStorage);
       $("periodRecords").addEventListener("click", event => {
-        const button = event.target.closest("button[data-period]");
-        if (button) deletePeriod(button.dataset.period);
+        const deleteButton = event.target.closest("button[data-period]");
+        const downloadButton = event.target.closest("button[data-download]");
+        if (deleteButton) deletePeriod(deleteButton.dataset.period);
+        if (downloadButton) downloadSource(downloadButton.dataset.download);
       });
+      $("backupBtn").addEventListener("click", exportJSON);
+      $("authForm").addEventListener("submit", login);
+      $("signupBtn").addEventListener("click", signup);
+      $("logoutBtn").addEventListener("click", logout);
       window.addEventListener("resize", debounce(updateDashboard, 150));
       updateDashboard();
+      initializeCloud();
     }
 
     function debounce(fn, wait) {
